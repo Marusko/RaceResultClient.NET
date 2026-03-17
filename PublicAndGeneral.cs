@@ -28,7 +28,7 @@ public sealed class PublicEndpoints(ApiClient client)
             new QueryParams()
                 .Add("year", year)
                 .Add("filter", filter)
-                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry"),
+                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
             ct);
 
     /// <summary>Creates a new event and returns an <see cref="EventApiClient"/> for it.</summary>

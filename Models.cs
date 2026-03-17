@@ -302,8 +302,11 @@ public record EventListItem
     public int Participants { get; init; }
     public string EventName { get; init; } = "";
     public string EventDate { get; init; } = "";
+    public int EventType { get; init; }
     public string EventLocation { get; init; } = "";
     public int EventCountry { get; init; }
+    public bool RegActive { get; set; }
+    public bool TestMode { get; set; }
 }
 
 // ── Vouchers ──────────────────────────────────────────────────────────────────
