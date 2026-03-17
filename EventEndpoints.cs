@@ -330,6 +330,10 @@ public sealed class RawDataEndpoints(EventApiClient e)
         return e.GetVoidAsync("rawdata/delete", q, ct);
     }
 
+    public Task AddManualAsync(int bib, double time, string point, CancellationToken ct = default)
+        => e.GetVoidAsync("rawdata/addmanual",
+            new QueryParams().Add("bib", bib).Add("time", time).Add("timingpoint", point), ct);
+
     public Task<RawDataEntry[]> GetAsync(Identifier id, string filter = "",
         RawDataFilter? rdFilter = null, string[]? addFields = null,
         int firstRow = 0, int maxRows = 0, string sortBy = "",
