@@ -101,5 +101,8 @@ public readonly struct Identifier
     /// <summary>Address participant by internal participant ID.</summary>
     public static Identifier Pid(int pid) => new("pid", pid);
 
+    /// <summary>Address participant by internal ID.</summary>
+    public static Identifier Id(int id) => new("id", id);
+
     internal QueryParams ApplyTo(QueryParams q) => q.AddAlways(Key, Value);
 }
