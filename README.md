@@ -208,15 +208,12 @@ You can also inject a custom exception factory if your application uses its own 
 client.ErrorFactory = (message, statusCode) => new MyAppException(message, statusCode);
 ```
 
-### Raw / escape-hatch access
+### Raw access
 
 If you need to call an endpoint not yet surfaced by the library:
 
 ```csharp
 byte[] raw = await ev.GetRawAsync("some/undocumented/endpoint");
-
-// Multi-resource request in a single round-trip
-var results = await ev.MultiRequestAsync(new[] { "contests/get", "splits/get" });
 ```
 
 ---
