@@ -22,32 +22,35 @@ public sealed class PublicEndpoints(ApiClient client)
         => client.GetVoidAsync(null, "public/logout", ct: ct);
 
     /// <summary>Returns a paged list of events for a given year and optional name filter.</summary>
-    public Task<EventListItem[]> GetEventListAsync(int year, string filter = "",
+    public Task<EventListItem[]> GetEventListAsync(int year, int limit = 20, string filter = "",
         CancellationToken ct = default)
         => client.GetAsync<EventListItem[]>(null, "public/eventlist",
             new QueryParams()
                 .Add("year", year)
                 .Add("filter", filter)
+                .Add("limit", limit)
                 .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
             ct);
 
     /// <summary>Returns a paged list of events in the past and optional name filter.</summary>
-    public Task<EventListItem[]> GetPastEventListAsync(string filter = "",
+    public Task<EventListItem[]> GetPastEventListAsync(int limit = 20, string filter = "",
         CancellationToken ct = default)
         => client.GetAsync<EventListItem[]>(null, "public/eventlist",
             new QueryParams()
                 .Add("dateTo", DateTime.Now.ToString("yyyy-MM-dd"))
                 .Add("filter", filter)
+                .Add("limit", limit)
                 .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
             ct);
 
     /// <summary>Returns a paged list of events in the future and optional name filter.</summary>
-    public Task<EventListItem[]> GetNextEventListAsync(string filter = "",
+    public Task<EventListItem[]> GetNextEventListAsync(int limit = 20, string filter = "",
         CancellationToken ct = default)
         => client.GetAsync<EventListItem[]>(null, "public/eventlist",
             new QueryParams()
                 .Add("dateFrom", DateTime.Now.ToString("yyyy-MM-dd"))
                 .Add("filter", filter)
+                .Add("limit", limit)
                 .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
             ct);
 
