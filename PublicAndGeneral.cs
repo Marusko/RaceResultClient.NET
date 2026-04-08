@@ -146,6 +146,7 @@ public sealed class GeneralEndpoints(ApiClient client)
     /// <param name="items">Items to translate.</param>
     /// <param name="fromEnglish">If true, translates from English to <paramref name="lang"/>; otherwise reverse.</param>
     /// <param name="lang">Target (or source) language code.</param>
+    /// <param name="ct">Cancellation token</param>
     public Task<string[]> TranslateAsync(IEnumerable<string> items, bool fromEnglish,
         string lang, CancellationToken ct = default)
         => client.PostAsync<string[]>(null, "translate2",
