@@ -64,6 +64,8 @@ var ev = await client.Public.CreateEventAsync("My Race 2025", new DateTime(2025,
 
 // Or pick from the event list
 var events = await client.Public.GetEventListAsync(year: 2025);
+var nextEvents = await client.Public.GetNextEventListAsync();
+var pastEvents = await client.Public.GetPastEventListAsync();
 var ev = client.ForEvent(events[0].Id);
 ```
 
