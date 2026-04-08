@@ -31,6 +31,26 @@ public sealed class PublicEndpoints(ApiClient client)
                 .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
             ct);
 
+    /// <summary>Returns a paged list of events in the past and optional name filter.</summary>
+    public Task<EventListItem[]> GetPastEventListAsync(string filter = "",
+        CancellationToken ct = default)
+        => client.GetAsync<EventListItem[]>(null, "public/eventlist",
+            new QueryParams()
+                .Add("dateTo", DateTime.Now.ToString("yyyy-MM-dd"))
+                .Add("filter", filter)
+                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
+            ct);
+
+    /// <summary>Returns a paged list of events in the future and optional name filter.</summary>
+    public Task<EventListItem[]> GetNextEventListAsync(string filter = "",
+        CancellationToken ct = default)
+        => client.GetAsync<EventListItem[]>(null, "public/eventlist",
+            new QueryParams()
+                .Add("dateFrom", DateTime.Now.ToString("yyyy-MM-dd"))
+                .Add("filter", filter)
+                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
+            ct);
+
     /// <summary>Creates a new event and returns an <see cref="EventApiClient"/> for it.</summary>
     public async Task<EventApiClient> CreateEventAsync(string name, DateTime date,
         int country = 0, int copyOf = 0, int templateId = 0, int mode = 0, int laps = 0,
