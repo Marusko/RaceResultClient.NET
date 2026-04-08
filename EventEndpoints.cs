@@ -326,7 +326,7 @@ public sealed class RawDataEndpoints(EventApiClient e)
     {
         var q = id.ApplyTo(new QueryParams()).Add("filter", filter);
         if (rdFilter is not null)
-            q.Add("rdFilter", System.Text.Json.JsonSerializer.Serialize(rdFilter));
+            q.Add("rdFilter", JsonSerializer.Serialize(rdFilter));
         return e.GetVoidAsync("rawdata/delete", q, ct);
     }
 
@@ -345,7 +345,7 @@ public sealed class RawDataEndpoints(EventApiClient e)
             .Add("maxRows", maxRows)
             .Add("sortBy", sortBy);
         if (rdFilter is not null)
-            q.Add("rdFilter", System.Text.Json.JsonSerializer.Serialize(rdFilter));
+            q.Add("rdFilter", JsonSerializer.Serialize(rdFilter));
         if (addFields?.Length > 0)
             q.AddArray("addFields", addFields);
         return e.GetAsync<RawDataEntry[]>("rawdata/get", q, ct);

@@ -4,7 +4,7 @@ namespace RaceResultClient;
 
 /// <summary>
 /// Per-event API facade. Obtain via <see cref="ApiClient.ForEvent"/> or
-/// <see cref="Endpoints.PublicEndpoints.CreateEventAsync"/>.
+/// <see cref="PublicEndpoints.CreateEventAsync"/>.
 /// All endpoint groups are created on-demand (no state beyond the event ID).
 /// </summary>
 public sealed class EventApiClient

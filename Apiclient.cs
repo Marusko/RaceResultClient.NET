@@ -64,10 +64,8 @@ public sealed class ApiClient : IDisposable
         CancellationToken ct = default)
     {
         var url = BuildUrl(eventId, cmd, query);
-        using var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = BuildContent(body, contentType)
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Content = BuildContent(body, contentType);
         return await SendAsync(request, ct);
     }
 
