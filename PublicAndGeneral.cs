@@ -114,17 +114,6 @@ public sealed class PublicEndpoints(ApiClient client)
     }
 }
 
-/// <summary>Login credentials. Populate only the fields appropriate for your auth method.</summary>
-public sealed class LoginOptions
-{
-    public string? User { get; set; }
-    public string? Password { get; set; }
-    public string? SignInAs { get; set; }
-    public string? Totp { get; set; }
-    public string? ApiKey { get; set; }
-    public string? RrUserToken { get; set; }
-}
-
 // ── General endpoints (fonts, version, translation) ──────────────────────────
 
 /// <summary>

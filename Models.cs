@@ -291,6 +291,17 @@ public record UserInfo(int CustNo, string UserName, string UserPic);
 public record UserRight(int UserId, string UserName, string UserPic,
     Dictionary<string, string[]> Rights);
 
+/// <summary>Login credentials. Populate only the fields appropriate for your auth method.</summary>
+public sealed class LoginOptions
+{
+    public string? User { get; set; }
+    public string? Password { get; set; }
+    public string? SignInAs { get; set; }
+    public string? Totp { get; set; }
+    public string? ApiKey { get; set; }
+    public string? RrUserToken { get; set; }
+}
+
 // ── Event list ────────────────────────────────────────────────────────────────
 
 public record EventListItem
