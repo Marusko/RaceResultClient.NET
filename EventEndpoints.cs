@@ -557,6 +557,9 @@ public sealed class SimpleApiEndpoints(EventApiClient e)
 
     public Task SaveAsync(IEnumerable<SimpleApiItem> items, CancellationToken ct = default)
         => e.PostVoidAsync("simpleapi/save", null, items.ToArray(), ct);
+
+    public Task SaveAllAsync(IEnumerable<SimpleApiItem> items, CancellationToken ct = default)
+        => e.PostVoidAsync("simpleapi/saveall", null, items.ToArray(), ct);
 }
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
