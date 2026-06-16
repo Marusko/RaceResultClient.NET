@@ -29,7 +29,7 @@ public sealed class PublicEndpoints(ApiClient client)
                 .Add("year", year)
                 .Add("filter", filter)
                 .Add("limit", limit)
-                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
+                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode,NotActivated,EventLogo"),
             ct);
 
     /// <summary>Returns a paged list of events in the past and optional name filter.</summary>
@@ -40,7 +40,7 @@ public sealed class PublicEndpoints(ApiClient client)
                 .Add("dateTo", DateTime.Now.ToString("yyyy-MM-dd"))
                 .Add("filter", filter)
                 .Add("limit", limit)
-                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
+                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode,NotActivated,EventLogo"),
             ct);
 
     /// <summary>Returns a paged list of events in the future and optional name filter.</summary>
@@ -51,7 +51,7 @@ public sealed class PublicEndpoints(ApiClient client)
                 .Add("dateFrom", DateTime.Now.ToString("yyyy-MM-dd"))
                 .Add("filter", filter)
                 .Add("limit", limit)
-                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode"),
+                .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode,NotActivated,EventLogo"),
             ct);
 
     /// <summary>Creates a new event and returns an <see cref="EventApiClient"/> for it.</summary>

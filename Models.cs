@@ -1,3 +1,4 @@
+using System.Security.Principal;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -486,6 +487,8 @@ public record EventListItem
     public int EventCountry { get; init; }
     public bool RegActive { get; set; }
     public bool TestMode { get; set; }
+    public int NotActivated { get; init; }
+    public string EventLogo { get; set; } = "";
 }
 
 // ── Vouchers ──────────────────────────────────────────────────────────────────
