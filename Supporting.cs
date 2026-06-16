@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Web;
@@ -26,11 +27,14 @@ public sealed class QueryParams
 
     public QueryParams Add(string key, int value) => value != 0 ? Add(key, value.ToString()) : this;
     public QueryParams Add(string key, bool value) => Add(key, value ? "true" : "false");
-    public QueryParams Add(string key, double value) => Add(key, value.ToString("G"));
-    public QueryParams Add(string key, decimal value) => Add(key, value.ToString("G"));
-    public QueryParams Add(string key, DateTime value) => Add(key, value.ToString("o"));
+    public QueryParams Add(string key, double value) => value != 0 ? Add(key, value.ToString("G", CultureInfo.InvariantCulture)) : this;
+    public QueryParams Add(string key, decimal value) => value != 0 ? Add(key, value.ToString(CultureInfo.InvariantCulture)) : this;
+    public QueryParams Add(string key, DateTime value) => Add(key, value.ToString("o", CultureInfo.InvariantCulture));
 
+    // Forced variants — emit the parameter even when the value is the type default.
     public QueryParams AddAlways(string key, int value) => Add(key, value.ToString());
+    public QueryParams AddAlways(string key, decimal value) => Add(key, value.ToString(CultureInfo.InvariantCulture));
+    public QueryParams AddAlways(string key, double value) => Add(key, value.ToString("G", CultureInfo.InvariantCulture));
 
     public QueryParams AddArray(string key, IEnumerable<string> values)
     {
@@ -75,11 +79,14 @@ public sealed class ApiException(string message, int statusCode) : Exception(mes
 
 internal static class JsonOptions
 {
+    // NOTE: enums are serialized numerically by default to match the Go model
+    // (encoding/json marshals integer enum types as their underlying int value).
+    // The only string-serialized enums in the Go model (certificate.PageSize /
+    // certificate.PageFormat) are individually annotated with a string converter.
     public static readonly JsonSerializerOptions Default = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Converters = { new JsonStringEnumConverter() }
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 }
 

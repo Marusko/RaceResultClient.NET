@@ -81,6 +81,10 @@ public sealed class PublicEndpoints(ApiClient client)
     public Task<UserInfo> GetUserInfoAsync(CancellationToken ct = default)
         => client.GetAsync<UserInfo>(null, "public/userinfo", ct: ct);
 
+    /// <summary>Exchanges the current session for an OAuth2 token.</summary>
+    public Task<OAuthToken> TokenFromSessionAsync(CancellationToken ct = default)
+        => client.GetAsync<OAuthToken>(null, "public/tokenfromsession", ct: ct);
+
     /// <summary>Lists users with access rights for an event.</summary>
     public Task<UserRight[]> GetUserRightsAsync(string eventId, CancellationToken ct = default)
         => client.GetAsync<UserRight[]>(null, "userrights/get",

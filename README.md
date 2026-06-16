@@ -15,14 +15,21 @@ A strongly-typed, async .NET client library for the [RaceResult](https://www.rac
 
 ```
 RaceResultClient.NET/
-├── Apiclient.cs          # Core HTTP client (auth, request building, error handling)
-├── EventApiClient.cs     # Per-event facade; entry point for all event-scoped endpoints
-├── EventEndpoints.cs     # All event-scoped endpoint groups (participants, timing, etc.)
-├── PublicAndGeneral.cs   # Server-level endpoints (login, event lifecycle, user rights)
-├── Models.cs             # All request/response record types and enums
-├── Supporting.cs         # QueryParams builder, ApiException, Identifier, JSON config
+├── Apiclient.cs              # Core HTTP client (auth, request building, error handling)
+├── EventApiClient.cs         # Per-event facade; entry point for all event-scoped endpoints
+├── EventEndpoints.cs         # Core event-scoped endpoint groups (participants, timing, etc.)
+├── EventEndpointsDesign.cs   # Additional groups (archives, certificates, lists, labels, …)
+├── PublicAndGeneral.cs       # Server-level endpoints (login, event lifecycle, user rights)
+├── Models.cs                 # Core request/response record types and enums
+├── DesignModels.cs           # Design-object models (certificate, label, list, kiosk, …)
+├── Supporting.cs             # QueryParams builder, ApiException, Identifier, JSON config
 └── RaceResultClient.csproj
 ```
+
+This client mirrors the official Go libraries [go-webapi](https://github.com/raceresult/go-webapi)
+and [go-model](https://github.com/raceresult/go-model): endpoint paths, query parameters and
+model fields track those repositories. Enums serialize numerically (as in Go's `encoding/json`),
+except the certificate page-size/format enums which serialize as strings.
 
 ---
 
@@ -115,6 +122,7 @@ using var client = new ApiClient("my-server.com");
 | `Public.CreateEventAsync` | Create a new event |
 | `Public.DeleteEventAsync` | Permanently delete an event |
 | `Public.GetUserInfoAsync` | Get info about the authenticated user |
+| `Public.TokenFromSessionAsync` | Exchange the session for an OAuth2 token |
 | `Public.GetUserRightsAsync` | List user access rights for an event |
 | `Public.SaveUserRightsAsync` | Grant/update user rights |
 | `Public.DeleteUserRightsAsync` | Revoke user rights |
@@ -129,32 +137,47 @@ All groups below are properties on `EventApiClient`.
 
 | Group | Description |
 |---|---|
-| `AgeGroups` | CRUD for age group definitions |
+| `AgeGroups` | CRUD, generate and reassign age group definitions |
+| `Archives` | Archive lookup, create/write/import the event archive |
+| `Backup` | Start/stop and monitor the backup process |
 | `BibRanges` | CRUD for bib number ranges |
-| `Chat` | Read and post event chat messages |
+| `Certificates` | CRUD for certificate designs; render PDF/JPG/thumbnail |
+| `CertificateSets` | CRUD for certificate sets; render and count |
+| `Chat` | Read messages, register users, post messages |
+| `ChipFile` | Read, save and clear the transponder chip file |
 | `Contests` | CRUD for contest/category definitions |
 | `CustomFields` | CRUD for custom participant fields |
-| `Data` | Query participant data by field with filtering, sorting, and pagination |
+| `Data` | Query and transform participant data with filtering, sorting, pagination |
+| `Dependencies` | Inspect the field dependency tree and circular references |
+| `EmailTemplates` | CRUD for email/SMS templates; preview and send |
 | `EntryFees` | CRUD for entry fee tiers |
 | `Exporters` | CRUD and start/stop for data exporters |
-| `File` | Upload and download the event file |
+| `File` | File access, activation, version, modjobid, ownership/rights |
 | `Forwarding` | Manage and monitor live data forwarding |
-| `History` | Read and delete participant field history |
-| `OverwriteValues` | CRUD for result overwrite values |
-| `Participants` | Full participant lifecycle: create, read, update, delete, import, bib management |
+| `GroupTimes` | Read and save group start times / finish time limits |
+| `History` | Read, export and delete participant field history |
+| `Information` | Frequent first names and gender lookup |
+| `Kiosks` | CRUD for kiosk configurations |
+| `Labels` | CRUD for label designs; render PDF |
+| `Lists` | CRUD for list designs; render PDF/HTML/XML/JSON/CSV/XLSX/… |
+| `OverwriteValues` | Save/delete/count result overwrite values |
+| `Participants` | Full participant lifecycle: create, read, update, delete, import (incl. SES), bib management |
+| `Pictures` | Manage participant/event pictures and thumbnails |
 | `Rankings` | CRUD for ranking definitions |
-| `RawData` | Read, filter, and delete raw timing data |
-| `Registrations` | Process online registration submissions |
+| `RawData` | Read, filter, export, copy/swap and delete raw timing data |
+| `RawDataRules` | CRUD for raw data routing rules |
+| `Registrations` | Process submissions; CRUD for registration forms |
 | `Results` | CRUD for result column definitions |
-| `Settings` | Read and write event settings by name |
+| `Settings` | Read, write and delete event settings by name |
 | `SimpleApi` | CRUD for Simple API endpoint configurations |
 | `Splits` | CRUD for split/checkpoint definitions |
-| `Statistics` | Read per-contest registration statistics |
+| `Statistics` | CRUD for statistic definitions; render and compute pivots |
+| `Synchronization` | Check-out/check-in status (online server) |
 | `TeamScores` | CRUD for team scoring definitions |
 | `TimingPoints` | CRUD for timing point definitions |
 | `TimingPointRules` | CRUD for timing point decoder routing rules |
-| `Times` | Submit passings, read/delete times, swap times between participants |
-| `UserDefinedFields` | CRUD for user-defined formula fields |
+| `Times` | Submit passings, read/delete/copy/swap times, single-start and random times |
+| `UserDefinedFields` | Read and overwrite user-defined formula fields |
 | `Vouchers` | CRUD for discount vouchers and validation |
 | `WebHooks` | CRUD for webhook configurations |
 

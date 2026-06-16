@@ -21,19 +21,34 @@ public sealed class EventApiClient
     // ── Endpoint group accessors (lazy, stateless) ───────────────────────────
 
     public AgeGroupsEndpoints AgeGroups => new(this);
+    public ArchivesEndpoints Archives => new(this);
+    public BackupEndpoints Backup => new(this);
     public BibRangesEndpoints BibRanges => new(this);
+    public CertificatesEndpoints Certificates => new(this);
+    public CertificateSetsEndpoints CertificateSets => new(this);
     public ContestsEndpoints Contests => new(this);
     public CustomFieldsEndpoints CustomFields => new(this);
+    public ChipFileEndpoints ChipFile => new(this);
     public DataEndpoints Data => new(this);
+    public DependenciesEndpoints Dependencies => new(this);
+    public EmailTemplatesEndpoints EmailTemplates => new(this);
     public EntryFeesEndpoints EntryFees => new(this);
     public ExportersEndpoints Exporters => new(this);
+    public GroupTimesEndpoints GroupTimes => new(this);
     public HistoryEndpoints History => new(this);
+    public InformationEndpoints Information => new(this);
+    public KiosksEndpoints Kiosks => new(this);
+    public LabelsEndpoints Labels => new(this);
+    public ListsEndpoints Lists => new(this);
     public ParticipantsEndpoints Participants => new(this);
+    public PicturesEndpoints Pictures => new(this);
     public RankingsEndpoints Rankings => new(this);
     public RawDataEndpoints RawData => new(this);
+    public RawDataRulesEndpoints RawDataRules => new(this);
     public ResultsEndpoints Results => new(this);
     public SettingsEndpoints Settings => new(this);
     public SplitsEndpoints Splits => new(this);
+    public SynchronizationEndpoints Synchronization => new(this);
     public TeamScoresEndpoints TeamScores => new(this);
     public TimesEndpoints Times => new(this);
     public TimingPointsEndpoints TimingPoints => new(this);
