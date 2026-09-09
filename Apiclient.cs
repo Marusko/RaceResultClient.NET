@@ -149,8 +149,13 @@ public sealed class ApiClient : IDisposable
         if (typeof(T) == typeof(string))
             return (T)(object)Encoding.UTF8.GetString(bytes);
 
-        return JsonSerializer.Deserialize<T>(bytes, JsonOptions.Default)
-               ?? throw new JsonException($"Deserialization returned null for type {typeof(T).Name}");
+        var value = JsonSerializer.Deserialize<T>(bytes, JsonOptions.Default);
+        if (value is not null) return value;
+
+        if (typeof(T).IsArray)
+            return (T)(object)Array.CreateInstance(typeof(T).GetElementType()!, 0);
+
+        throw new JsonException($"Deserialization returned null for type {typeof(T).Name}");
     }
 
     public void Dispose() => _http.Dispose();
