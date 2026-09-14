@@ -31,6 +31,10 @@ and [go-model](https://github.com/raceresult/go-model): endpoint paths, query pa
 model fields track those repositories. Enums serialize numerically (as in Go's `encoding/json`),
 except the certificate page-size/format enums which serialize as strings.
 
+Property names follow C# conventions (`Id`, `Url`, `Rssi`), but every property whose Go JSON name
+differs carries a `[JsonPropertyName]` attribute (`ID`, `URL`, `RSSI`, …), so the bytes on the wire
+are byte-for-byte identical to what go-webapi sends and expects.
+
 ---
 
 ## Getting Started

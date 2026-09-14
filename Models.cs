@@ -16,6 +16,7 @@ namespace RaceResultClient;
 
 public record Participant
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public int Bib { get; init; }
     public string ForeignKey { get; init; } = "";
@@ -28,6 +29,7 @@ public record Participant
     public string Sex { get; init; } = "";
     public string DateOfBirth { get; init; } = "";
     public string Street { get; init; } = "";
+    [JsonPropertyName("ZIP")]
     public string Zip { get; init; } = "";
     public string City { get; init; } = "";
     public string State2 { get; init; } = "";
@@ -49,37 +51,47 @@ public record Participant
     public string BranchNo { get; init; } = "";
     public string Bankname { get; init; } = "";
     public string AccountOwner { get; init; } = "";
+    [JsonPropertyName("IBAN")]
     public string Iban { get; init; } = "";
+    [JsonPropertyName("BIC")]
     public string Bic { get; init; } = "";
+    [JsonPropertyName("SEPAMandate")]
     public string SepaMandate { get; init; } = "";
     public string Comment { get; init; } = "";
     public string Created { get; init; } = "";
     public string Modified { get; init; } = "";
     public string Uploaded { get; init; } = "";
     public string CreatedBy { get; init; } = "";
+    [JsonPropertyName("ForeignID")]
     public int ForeignId { get; init; }
+    [JsonPropertyName("RecordPayGUID")]
     public string RecordPayGuid { get; init; } = "";
+    [JsonPropertyName("ActivationEventID")]
     public string ActivationEventId { get; init; } = "";
+    [JsonPropertyName("OPJSON")]
     public string Opjson { get; init; } = "";
     public string License { get; init; } = "";
     public bool ShowUnderscores { get; init; }
     public int GroupRegPos { get; init; }
+    [JsonPropertyName("GroupID")]
     public int GroupId { get; init; }
     public string Password { get; init; } = "";
     public string Voucher { get; init; } = "";
     public string Language { get; init; } = "";
 }
 
-public record ParticipantNewResponse(int Id, int Bib);
+public record ParticipantNewResponse([property: JsonPropertyName("ID")] int Id, int Bib);
 
-public record SaveValueArrayItem(int Bib, int Pid, string FieldName, object? Value);
+public record SaveValueArrayItem(int Bib, [property: JsonPropertyName("PID")] int Pid, string FieldName,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] object? Value);
 
-public record ImportResult(int Added, int Updated, int[] Pids);
+public record ImportResult(int Added, int Updated, [property: JsonPropertyName("PIDs")] int[] Pids);
 
 // ── Contests & Age Groups ─────────────────────────────────────────────────────
 
 public record Contest
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public string NameShort { get; init; } = "";
@@ -99,6 +111,7 @@ public record Contest
     public int FinishResult { get; init; }
     public decimal FinishTimeLimit { get; init; }
     public int Laps { get; init; }
+    [JsonPropertyName("MinResultID")]
     public int MinResultId { get; init; }
     public decimal MinLapTime { get; init; }
     public int TimingMode { get; init; }
@@ -118,6 +131,7 @@ public record Contest
 
 public record AgeGroup
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public string NameShort { get; init; } = "";
@@ -134,7 +148,7 @@ public record AgeGroup
 
 // ── Timing & Raw Data ─────────────────────────────────────────────────────────
 
-public record RaceTime(int Pid, int Result, decimal DecimalTime, string TimeText, string InfoText);
+public record RaceTime([property: JsonPropertyName("PID")] int Pid, int Result, decimal DecimalTime, string TimeText, string InfoText);
 
 public record PassingPosition
 {
@@ -149,17 +163,21 @@ public record Passing
     public string Transponder { get; init; } = "";
     public PassingPosition? Position { get; init; }
     public int Hits { get; init; }
+    [JsonPropertyName("RSSI")]
     public int Rssi { get; init; }
     public decimal Battery { get; init; }
     public int Temperature { get; init; }
     [JsonPropertyName("WUC")]
     public int WakeupCounter { get; init; }
+    [JsonPropertyName("LoopID")]
     public byte LoopId { get; init; }
     public byte Channel { get; init; }
     public string InternalData { get; init; } = "";
     public int StatusFlags { get; init; }
+    [JsonPropertyName("DeviceID")]
     public string DeviceId { get; init; } = "";
     public string DeviceName { get; init; } = "";
+    [JsonPropertyName("OrderID")]
     public int OrderId { get; init; }
     public int Port { get; init; }
     public bool IsMarker { get; init; }
@@ -175,6 +193,7 @@ public record PassingToProcess
 {
     public int Bib { get; init; }
     public string TimingPoint { get; init; } = "";
+    [JsonPropertyName("ResultID")]
     public int ResultId { get; init; }
     public decimal Time { get; init; }
     public string InfoText { get; init; } = "";
@@ -182,13 +201,15 @@ public record PassingToProcess
 }
 
 public record TimesAddResponseItem(
-    int Status, decimal Time, int ResultId, string ResultName,
-    int RawDataId, string TimingPoint,
+    int Status, decimal Time, [property: JsonPropertyName("ResultID")] int ResultId, string ResultName,
+    [property: JsonPropertyName("RawDataID")] int RawDataId, string TimingPoint,
     Dictionary<string, JsonElement>? Fields);
 
 public record RawDataEntry
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
+    [JsonPropertyName("PID")]
     public int Pid { get; init; }
     public string TimingPoint { get; init; } = "";
     public int Result { get; init; }
@@ -205,19 +226,25 @@ public record RawDataWithAdditionalFields : RawDataEntry
 
 public record RawDataDistinctValues
 {
+    [JsonPropertyName("DecoderID")]
     public string[]? DecoderId { get; init; }
+    [JsonPropertyName("OrderID")]
     public int[]? OrderId { get; init; }
     public decimal[]? BatteryVoltage { get; init; }
     public int[]? Hits { get; init; }
+    [JsonPropertyName("RSSI")]
     public int[]? Rssi { get; init; }
 }
 
 public record RawDataFilter
 {
+    [JsonPropertyName("ID")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int[]? Id { get; init; }
+    [JsonPropertyName("MinID")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int MinId { get; init; }
+    [JsonPropertyName("MaxID")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int MaxId { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -228,18 +255,26 @@ public record RawDataFilter
     public decimal MaxTime { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int[]? Result { get; init; }
+    [JsonPropertyName("DeviceID")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string[]? DeviceId { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string[]? DeviceName { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string[]? Transponder { get; init; }
+    [JsonPropertyName("OrderID")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int[]? OrderId { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int[]? Hits { get; init; }
+    [JsonPropertyName("RSSI")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int[]? Rssi { get; init; }
+    [JsonPropertyName("LoopID")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public byte[]? LoopId { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public byte[]? Channel { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public decimal[]? Battery { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -256,8 +291,11 @@ public record RawDataFilter
 
 public record RawDataRule
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
+    [JsonPropertyName("ResultID")]
     public int ResultId { get; init; }
+    [JsonPropertyName("ContestID")]
     public int ContestId { get; init; }
     public int Mode { get; init; }
     public int N { get; init; }
@@ -273,6 +311,7 @@ public record RawDataRule
 
 public record Result
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public string Formula { get; init; } = "";
@@ -284,6 +323,7 @@ public record Result
 
 public record Ranking
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public string[] Group { get; init; } = [];
@@ -299,6 +339,7 @@ public record Ranking
 
 public record Split
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public int Contest { get; init; }
     public string Name { get; init; } = "";
@@ -341,6 +382,7 @@ public enum CustomFieldType
 
 public record CustomField
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public string AltName { get; init; } = "";
@@ -362,6 +404,7 @@ public record CustomField
 
 public record EntryFee
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public int Contest { get; init; }
@@ -381,22 +424,26 @@ public record EntryFee
     public int OrderPos { get; init; }
 }
 
-public record EntryFeeItem(int Id, string Name, decimal Fee, string Field, decimal Tax, decimal Multiplication, int ContestId);
+public record EntryFeeItem([property: JsonPropertyName("ID")] int Id, string Name, decimal Fee, string Field, decimal Tax, decimal Multiplication, [property: JsonPropertyName("ContestID")] int ContestId);
 
 // ── Exporters ─────────────────────────────────────────────────────────────────
 
 public record Exporter
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public string Filter { get; init; } = "";
     public string TriggerTimingPoint { get; init; } = "";
     public string TriggerSplit { get; init; } = "";
+    [JsonPropertyName("TriggerResultID")]
     public int TriggerResultId { get; init; }
     public string DestinationType { get; init; } = "";
     public string Destination { get; init; } = "";
     public string Data { get; init; } = "";
+    [JsonPropertyName("MTB")]
     public int Mtb { get; init; }
+    [JsonPropertyName("MQL")]
     public int Mql { get; init; }
     public int ProcessingDelay { get; init; }
     public string LineEnding { get; init; } = "";
@@ -412,8 +459,10 @@ public record Exporter
 
 public record HistoryEntry
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public int Bib { get; init; }
+    [JsonPropertyName("PartID")]
     public int PartId { get; init; }
     public DateTime DateTime { get; init; }
     public string FieldName { get; init; } = "";
@@ -423,10 +472,11 @@ public record HistoryEntry
     public string Application { get; init; } = "";
 }
 
-public record HistoryCount(int Pid, int Count);
+public record HistoryCount([property: JsonPropertyName("PID")] int Pid, int Count);
 
 public record HistoryFilter
 {
+    [JsonPropertyName("ID")]
     public int[]? Id { get; init; }
     public string[]? Field { get; init; }
     public string[]? OldValue { get; init; }
@@ -438,13 +488,24 @@ public record HistoryFilter
     public HistoryParticipantFilter? Participant { get; init; }
 }
 
-public record HistoryParticipantFilter(int[]? Id, int[]? Contest, string? Expression);
+public record HistoryParticipantFilter([property: JsonPropertyName("ID")] int[]? Id, int[]? Contest, string? Expression);
 
 // ── Auth & User management ────────────────────────────────────────────────────
 
 public record UserInfo(int CustNo, string UserName, string UserPic);
 
-public record UserRight(int UserId, string UserName, string UserPic,
+/// <summary>A single setting value, optionally scoped to a contest and/or result.</summary>
+public record Setting
+{
+    public string Name { get; init; } = "";
+    // Go marshals a nil variant.Variant as an explicit null, so never omit this.
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+    public object? Value { get; init; }
+    public int Result { get; init; }
+    public int Contest { get; init; }
+}
+
+public record UserRight([property: JsonPropertyName("UserID")] int UserId, string UserName, string UserPic,
     Dictionary<string, string[]> Rights);
 
 /// <summary>Login credentials. Populate only the fields appropriate for your auth method.</summary>
@@ -475,13 +536,16 @@ public record OAuthToken
 
 public record EventListItem
 {
+    [JsonPropertyName("ID")]
     public string Id { get; init; } = "";
+    [JsonPropertyName("UserID")]
     public int UserId { get; init; }
     public string UserName { get; init; } = "";
     public bool CheckedOut { get; init; }
     public int Participants { get; init; }
     public string EventName { get; init; } = "";
     public string EventDate { get; init; } = "";
+    public string EventDate2 { get; init; } = "";
     public int EventType { get; init; }
     public string EventLocation { get; init; } = "";
     public int EventCountry { get; init; }
@@ -500,6 +564,7 @@ public enum VoucherType : byte
 
 public record Voucher
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Code { get; init; } = "";
     public VoucherType Type { get; init; }
@@ -525,10 +590,12 @@ public enum WebHookType
 
 public record WebHook
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public bool Disabled { get; init; }
     public string Name { get; init; } = "";
     public WebHookType Type { get; init; }
+    [JsonPropertyName("URL")]
     public string Url { get; init; } = "";
     public string[] Fields { get; init; } = [];
     public string Filter { get; init; } = "";
@@ -539,6 +606,7 @@ public record WebHook
 
 public record BibRange
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public int BibStart { get; init; }
     public int BibEnd { get; init; }
@@ -547,17 +615,20 @@ public record BibRange
     public decimal FinishTimeLimit { get; init; }
     public string Comment { get; init; } = "";
     public string Filter { get; init; } = "";
+    public bool Disabled { get; init; }
 }
 
 public record TimingPoint
 {
     public string Name { get; init; } = "";
     public int Type { get; init; }
+    [JsonPropertyName("DDT")]
     public int Ddt { get; init; }
     public int IgnoreIfTimeIn { get; init; }
     public decimal IgnoreBefore { get; init; }
     public decimal IgnoreAfter { get; init; }
     public int SubtractT0 { get; init; }
+    [JsonPropertyName("IgnorePS")]
     public int IgnorePs { get; init; }
     public string Position { get; init; } = "";
     public int OrderPos { get; init; }
@@ -566,11 +637,16 @@ public record TimingPoint
 
 public record TimingPointRule
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
+    [JsonPropertyName("DecoderID")]
     public string DecoderId { get; init; } = "";
     public string DecoderName { get; init; } = "";
+    [JsonPropertyName("LoopID")]
     public byte LoopId { get; init; }
+    [JsonPropertyName("ChannelID")]
     public byte ChannelId { get; init; }
+    [JsonPropertyName("OrderID")]
     public int OrderId { get; init; }
     public decimal MinTime { get; init; }
     public decimal MaxTime { get; init; }
@@ -580,10 +656,15 @@ public record TimingPointRule
 
 public record TeamScore
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
+    [JsonPropertyName("ResultID1")]
     public int ResultId1 { get; init; }
+    [JsonPropertyName("ResultID2")]
     public int ResultId2 { get; init; }
+    [JsonPropertyName("ResultID3")]
     public int ResultId3 { get; init; }
+    [JsonPropertyName("ResultID4")]
     public int ResultId4 { get; init; }
     public int ResultMode1 { get; init; }
     public int ResultMode2 { get; init; }
@@ -624,7 +705,7 @@ public record TeamScore
     public decimal LapTimesIgnoreAfter { get; init; }
 }
 
-public record SimpleApiItem(bool Disabled, string Key, string Url, string Label);
+public record SimpleApiItem(bool Disabled, string Key, [property: JsonPropertyName("URL")] string Url, string Label);
 
 public record ChatMessage(
     [property: JsonPropertyName("i")] int Id,
@@ -641,11 +722,12 @@ public record Version(
 
 public record ChipFileEntry(string Transponder, string Identification);
 
-public record ContestStatisticsResult(int Id, int Male, int Female,
+public record ContestStatisticsResult([property: JsonPropertyName("ID")] int Id, int Male, int Female,
     [property: JsonPropertyName("isFormula")] bool IsFormula);
 
 public record ContestStatistics
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public int Male { get; init; }
@@ -668,6 +750,7 @@ public record GroupTimes
 
 public record GroupTime
 {
+    [JsonPropertyName("ID")]
     public JsonElement? Id { get; init; }
     public decimal Time { get; init; }
     public JsonElement? Item { get; init; }
@@ -683,20 +766,21 @@ public record RegistrationRequest
 }
 
 public record RegistrationRequestRecord(
-    int Pid,
+    [property: JsonPropertyName("PID")] int Pid,
     Dictionary<string, object?> Record,
     string[] Expressions);
 
 public record UserDefinedField(string Name, string Expression, string Note, string Group);
 
-public record OverwriteValue(int Id, int Pid, int ResultId, decimal Value);
+public record OverwriteValue([property: JsonPropertyName("ID")] int Id, [property: JsonPropertyName("PID")] int Pid, [property: JsonPropertyName("ResultID")] int ResultId, decimal Value);
 
 // ── Archives ──────────────────────────────────────────────────────────────────
 
-public record ArchiveMatch(int Id, string FirstName, string LastName, int Year);
+public record ArchiveMatch([property: JsonPropertyName("ID")] int Id, string FirstName, string LastName, int Year);
 
 public record ArchiveParticipant
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Transponder1 { get; init; } = "";
     public string Transponder2 { get; init; } = "";
@@ -708,6 +792,7 @@ public record ArchiveParticipant
     public string Sex { get; init; } = "";
     public string DateOfBirth { get; init; } = "";
     public string Street { get; init; } = "";
+    [JsonPropertyName("ZIP")]
     public string Zip { get; init; } = "";
     public string State { get; init; } = "";
     public string City { get; init; } = "";
@@ -728,7 +813,9 @@ public record ArchiveParticipation
     public int Contest { get; init; }
     public string Time { get; init; } = "";
     public int TotRank { get; init; }
+    [JsonPropertyName("MFRank")]
     public int MfRank { get; init; }
+    [JsonPropertyName("AGRank")]
     public int AgRank { get; init; }
     public int Bib { get; init; }
 }
@@ -740,7 +827,9 @@ public record ArchiveParticipationExt
     public string ContestName { get; init; } = "";
     public string FinalTime { get; init; } = "";
     public int TotRank { get; init; }
+    [JsonPropertyName("MFRank")]
     public int MfRank { get; init; }
+    [JsonPropertyName("AGRank")]
     public int AgRank { get; init; }
     public int Bib { get; init; }
 }

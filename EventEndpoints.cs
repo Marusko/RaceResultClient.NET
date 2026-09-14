@@ -518,9 +518,13 @@ public sealed class SettingsEndpoints(EventApiClient e)
     public Task<Dictionary<string, JsonElement>> GetAsync(CancellationToken ct = default,
         params string[] names)
     {
+        // Mirrors go-webapi: no names means no request at all.
+        if (names.Length == 0)
+            return Task.FromResult(new Dictionary<string, JsonElement>());
+
         var q = new QueryParams();
         if (names.Length == 1) q.Add("name", names[0]);
-        else if (names.Length > 1) q.Add("names", string.Join(",", names));
+        else q.Add("names", string.Join(",", names));
         return e.GetAsync<Dictionary<string, JsonElement>>("settings/getsettings", q, ct);
     }
 
@@ -530,10 +534,13 @@ public sealed class SettingsEndpoints(EventApiClient e)
         return map.TryGetValue(name, out var v) ? v : null;
     }
 
+    /// <summary>Saves several settings in one call.</summary>
+    public Task SaveAsync(IEnumerable<Setting> settings, CancellationToken ct = default)
+        => e.PostVoidAsync("settings/savesettings", null, settings.ToArray(), ct);
+
     public Task SaveAsync(string name, object? value, int result = 0, int contest = 0,
         CancellationToken ct = default)
-        => e.PostVoidAsync("settings/savesettings", null,
-            new[] { new { Name = name, Value = value, Result = result, Contest = contest } }, ct);
+        => SaveAsync([new Setting { Name = name, Value = value, Result = result, Contest = contest }], ct);
 
     /// <summary>Saves a single setting value.</summary>
     public Task SaveValueAsync(string name, object? value, CancellationToken ct = default)

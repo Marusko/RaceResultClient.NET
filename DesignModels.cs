@@ -69,7 +69,9 @@ public record Certificate
     public int Holes { get; init; }
     public string SpecialHoles { get; init; } = "";
     public string Substrate { get; init; } = "";
+    [JsonPropertyName("RGBBlackToCMYK")]
     public bool RgbBlackToCmyk { get; init; }
+    [JsonPropertyName("CMYKBlackValue")]
     public string CmykBlackValue { get; init; } = "";
     public string PrintNotes { get; init; } = "";
     public int Copies { get; init; }
@@ -100,6 +102,7 @@ public record CertificateElement
     public bool FontItalic { get; init; }
     public bool FontUnderlined { get; init; }
     public int FontColor { get; init; }
+    [JsonPropertyName("FontColorCMYK")]
     public string FontColorCmyk { get; init; } = "";
     public int Alignment { get; init; }
     [JsonPropertyName("vAlignment")]
@@ -133,9 +136,11 @@ public record CertificateSet
     public string Certificate { get; init; } = "";
     public CertificateSetType CertificateSetType { get; init; }
     public int TeamScore { get; init; }
+    [JsonPropertyName("FilterRankID")]
     public int FilterRankId { get; init; }
     public string FilterRankOperator { get; init; } = "";
     public int FilterRankCompare { get; init; }
+    [JsonPropertyName("FilterAYN")]
     public int FilterAyn { get; init; }
     public bool FilterOnlyFinishers { get; init; }
     public string FilterGeneral { get; init; } = "";
@@ -325,7 +330,7 @@ public record ListField
     public int ResponsiveHide { get; init; }
 }
 
-public record ListSelectorResult(int ResultId, int ResultId2, string ShowAs);
+public record ListSelectorResult([property: JsonPropertyName("ResultID")] int ResultId, [property: JsonPropertyName("ResultID2")] int ResultId2, string ShowAs);
 
 // ── kiosk ─────────────────────────────────────────────────────────────────────
 
@@ -340,6 +345,7 @@ public record Kiosk
     public int AcceptedTransponders { get; init; }
     public bool IgnoreBibRanges { get; init; }
     public bool AutoFinish { get; init; }
+    [JsonPropertyName("CSS")]
     public string Css { get; init; } = "";
     public string Title { get; init; } = "";
     public KioskStep[] Steps { get; init; } = [];
@@ -399,9 +405,12 @@ public record EmailTemplate
     public string Sender { get; init; } = "";
     public string SenderName { get; init; } = "";
     public string ReplyTo { get; init; } = "";
+    [JsonPropertyName("CC")]
     public string Cc { get; init; } = "";
+    [JsonPropertyName("BCC")]
     public string Bcc { get; init; } = "";
     public string ReceiverField { get; init; } = "";
+    [JsonPropertyName("HTML")]
     public bool Html { get; init; }
     public string Method { get; init; } = "";
     public string Subject { get; init; } = "";
@@ -412,6 +421,7 @@ public record EmailTemplate
     public string SetCustomFieldAfterSending { get; init; } = "";
     public string SaveResultIn { get; init; } = "";
     public EmailAttachment[]? Attachments { get; init; }
+    [JsonPropertyName("HTTPHeaders")]
     public HttpHeader[]? HttpHeaders { get; init; }
 }
 
@@ -428,25 +438,31 @@ public record EmailPreview
 {
     public EmailTemplateType Type { get; init; }
     public int[]? Bibs { get; init; }
+    [JsonPropertyName("PIDs")]
     public int[]? Pids { get; init; }
     public string? Sender { get; init; }
     public string? SenderName { get; init; }
     public string? ReplyTo { get; init; }
+    [JsonPropertyName("CC")]
     public string? Cc { get; init; }
+    [JsonPropertyName("BCC")]
     public string? Bcc { get; init; }
     public string? CellPhone { get; init; }
     public string? Email { get; init; }
     public string? Subject { get; init; }
     public string? Text { get; init; }
+    [JsonPropertyName("HTML")]
     public bool Html { get; init; }
+    [JsonPropertyName("URL")]
     public string? Url { get; init; }
     public string? Method { get; init; }
     public EmailPreviewAttachment[]? Attachments { get; init; }
+    [JsonPropertyName("HTTPHeaders")]
     public HttpHeader[]? HttpHeaders { get; init; }
     public string[]? Errors { get; init; }
 }
 
-public record EmailPreviewAttachment(EmailAttachmentType Type, string Name, string Label, int Bib, int Pid);
+public record EmailPreviewAttachment(EmailAttachmentType Type, string Name, string Label, int Bib, [property: JsonPropertyName("PID")] int Pid);
 
 // ── registration ──────────────────────────────────────────────────────────────
 
@@ -481,6 +497,7 @@ public record Registration
     public RegistrationPaymentMethod[] RefundMethods { get; init; } = [];
     public RegistrationConfirmation Confirmation { get; init; } = new();
     public RegistrationAfterSave[] AfterSave { get; init; } = [];
+    [JsonPropertyName("CSS")]
     public string Css { get; init; } = "";
     public RegistrationErrorMessages ErrorMessages { get; init; } = new();
 }
@@ -489,6 +506,7 @@ public record RegistrationComponent(string Name, RegistrationElement[] Elements)
 
 public record RegistrationStep
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Title { get; init; } = "";
     public bool Enabled { get; init; }
@@ -513,6 +531,7 @@ public record RegistrationElement
     public bool ShowIfInitial { get; init; }
     public RegistrationStyle[]? Styles { get; init; }
     public string ClassName { get; init; } = "";
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public int Common { get; init; }
     public RegistrationValidationRule[]? ValidationRules { get; init; }
@@ -575,6 +594,7 @@ public record RegistrationAfterSave
 
 public record RegistrationPaymentMethod
 {
+    [JsonPropertyName("ID")]
     public int Id { get; init; }
     public string Label { get; init; } = "";
     public bool Enabled { get; init; }
