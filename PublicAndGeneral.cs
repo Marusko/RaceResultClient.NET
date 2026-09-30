@@ -121,6 +121,21 @@ public sealed class PublicEndpoints(ApiClient client)
     }
 }
 
+// ── Local server endpoints (a RACE RESULT server at the venue) ────────────────
+
+/// <summary>
+/// Endpoint group of a RACE RESULT server running at the venue (not the cloud). It answers without a
+/// login — its own start page lists the events with <c>local/eventlist</c>, while
+/// <c>public/eventlist</c> asks it for a token it cannot make ("this server cannot create tokens").
+/// Event endpoints (<see cref="ApiClient.ForEvent"/>) work there as usual, with the default session.
+/// </summary>
+public sealed class LocalServerEndpoints(ApiClient client)
+{
+    /// <summary>Every event on the server (the start page's list).</summary>
+    public Task<LocalEventListItem[]> GetEventListAsync(CancellationToken ct = default)
+        => client.GetAsync<LocalEventListItem[]>(null, "local/eventlist", ct: ct);
+}
+
 // ── General endpoints (fonts, version, translation) ──────────────────────────
 
 /// <summary>

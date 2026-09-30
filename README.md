@@ -78,6 +78,12 @@ var events = await client.Public.GetEventListAsync(year: 2025);
 var nextEvents = await client.Public.GetNextEventListAsync();
 var pastEvents = await client.Public.GetPastEventListAsync();
 var ev = client.ForEvent(events[0].Id);
+
+// A RACE RESULT server at the venue: no login, its own event list (public/eventlist
+// would ask it for a token it cannot make); event endpoints then work as usual
+using var local = new ApiClient("192.168.1.20", useHttps: false);
+var localEvents = await local.Local.GetEventListAsync();
+var localEv = local.ForEvent(localEvents[0].Id);
 ```
 
 ### 4. Call endpoints
@@ -116,7 +122,7 @@ using var client = new ApiClient("my-server.com");
 
 ## Endpoint Reference
 
-### Server-level (`client.Public`, `client.General`)
+### Server-level (`client.Public`, `client.General`, `client.Local`)
 
 | Endpoint | Description |
 |---|---|
@@ -134,6 +140,7 @@ using var client = new ApiClient("my-server.com");
 | `General.GetAppVersionAsync` | Get server application version |
 | `General.TranslateAsync` | Translate field names or expressions |
 | `General.GetLangItemAsync` | Get a single translation string |
+| `Local.GetEventListAsync` | All events on a RACE RESULT server at the venue (no login) |
 
 ### Event-scoped (`ev.*`)
 

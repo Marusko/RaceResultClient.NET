@@ -555,6 +555,22 @@ public record EventListItem
     public string EventLogo { get; set; } = "";
 }
 
+/// <summary>An event on a RACE RESULT server at the venue (<c>local/eventlist</c>).</summary>
+public record LocalEventListItem
+{
+    [JsonPropertyName("ID")]
+    public string Id { get; init; } = "";
+    /// <summary>The event file on the server (<c>.ses</c>).</summary>
+    public string FileName { get; init; } = "";
+    public string EventName { get; init; } = "";
+    public string EventDate { get; init; } = "";
+    public int EventType { get; init; }
+    public bool CheckedOut { get; init; }
+    public int Participants { get; init; }
+    public int NotActivated { get; init; }
+    public string EventLogo { get; init; } = "";
+}
+
 // ── Vouchers ──────────────────────────────────────────────────────────────────
 
 public enum VoucherType : byte

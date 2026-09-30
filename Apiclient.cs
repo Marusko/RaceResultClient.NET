@@ -39,6 +39,7 @@ public sealed class ApiClient : IDisposable
 
     public PublicEndpoints Public => new(this);
     public GeneralEndpoints General => new(this);
+    public LocalServerEndpoints Local => new(this);
 
     public EventApiClient ForEvent(string eventId) => new(eventId, this);
 
