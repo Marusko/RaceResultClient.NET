@@ -45,6 +45,10 @@ are byte-for-byte identical to what go-webapi sends and expects.
 using RaceResultClient;
 
 var client = new ApiClient(server: "my-raceresult-server.com", useHttps: true);
+
+// Or with a handler of your own (one that checks where it may connect, a proxy, a test double);
+// it is disposed with the client
+var checkedClient = new ApiClient("my-raceresult-server.com", true, "webapi/1.0", new SocketsHttpHandler());
 ```
 
 ### 2. Authenticate
