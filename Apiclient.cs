@@ -22,11 +22,21 @@ public sealed class ApiClient : IDisposable
     public Func<string, int, Exception>? ErrorFactory { get; set; }
 
     public ApiClient(string server, bool useHttps = true, string userAgent = "webapi/1.0")
+        : this(server, useHttps, userAgent, handler: null)
+    {
+    }
+
+    /// <summary>
+    /// A client whose requests go through the caller's handler: one that decides where it may connect
+    /// (an address a user typed, checked again when the connection is made), a proxy, a test double.
+    /// The handler is disposed with this client.
+    /// </summary>
+    public ApiClient(string server, bool useHttps, string userAgent, HttpMessageHandler? handler)
     {
         var scheme = useHttps ? "https" : "http";
         _baseUrl = $"{scheme}://{server}";
 
-        _http = new HttpClient();
+        _http = handler is null ? new HttpClient() : new HttpClient(handler, disposeHandler: true);
         _http.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
     }
 
