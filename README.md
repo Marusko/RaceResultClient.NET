@@ -20,7 +20,7 @@ RaceResultClient.NET/
 ├── EventEndpoints.cs         # Core event-scoped endpoint groups (participants, timing, etc.)
 ├── EventEndpointsDesign.cs   # Additional groups (archives, certificates, lists, labels, …)
 ├── PublicAndGeneral.cs       # Server-level endpoints (login, event lifecycle, user rights)
-├── Models.cs                 # Core request/response record types and enums
+├── Models.cs                 # Core request/response record types, enums and RaceResult's codes
 ├── DesignModels.cs           # Design-object models (certificate, label, list, kiosk, …)
 ├── Supporting.cs             # QueryParams builder, ApiException, Identifier, JSON config
 └── RaceResultClient.csproj
@@ -213,6 +213,35 @@ await ev.Participants.GetFieldsAsync(Identifier.Pid(5432), new[] { "Firstname", 
 
 // Address by internal ID
 await ev.History.GetAsync(Identifier.Id(99));
+```
+
+### RaceResult's codes
+
+Some model fields are numbers (or strings) whose meaning is RaceResult's. The library names them, so a
+caller keeps none of its own; the values are RaceResult's go-model constants or what RaceResult's own
+splits page writes (checked against a splits definition set up by hand and exported):
+
+| Class | For | Values |
+|---|---|---|
+| `SplitTypes` | `Split.SplitType` | `Split` 0, `Internal` 2, `Leg` 9 |
+| `SplitTimeModes` | `Split.TimeMode` (what `TimeMin`/`TimeMax` are) | `RaceTime` 0, `TimeOfDay` -1, `FromPreviousSplit` -2, `MinPerKm` -3, `MinPerMile` -4, `MinPer100m` -5, `Kmh` -6, `Mph` -7, `MetresPerSecond` -8 ("From Split …" is stored as a value of its own) |
+| `SplitDistanceFrom` | `Split.DistanceFrom` | `Start` 0, `PreviousSplit` -1; otherwise the `Id` of the split it is measured from |
+| `SplitDistanceUnits` | `Split.DistanceUnit` | `m`, `km`, `miles` |
+| `SplitSpeeds` | a split's speed or pace display | `None` 0 … `MetresPerSecond` 6 |
+| `TypesOfSport` | `Split.TypeOfSport` | `None` 0, `Swimming` 4, `Skiing` 5, `Other` 10, `Cycling` 11, `Running` 100, `TransitionFirstRead` 250, `TransitionLastRead` 251 |
+| `ContestTimingModes` | `Contest.TimingMode` | `GunTime` 0, `ChipTime` 1 |
+| `ParticipantStatuses` | `Participant.Status` | `Regular` 0, `OutOfCompetition` 1, `Disqualified` 2, `DidNotFinish` 3, `DidNotStart` 4, `NotPresent` 5 |
+
+```csharp
+// Lap 2: 5 km from the previous split, between 5 s and 1 min after it, cycling
+var lap = new Split
+{
+    Contest = 1, Name = "Lap2", TimingPoint = "FINISH",
+    TypeOfSport = TypesOfSport.Cycling,
+    Distance = 5, DistanceUnit = SplitDistanceUnits.Kilometers, DistanceFrom = SplitDistanceFrom.PreviousSplit,
+    TimeMin = 5, TimeMax = 60, TimeMode = SplitTimeModes.FromPreviousSplit,
+};
+await ev.Splits.SaveAsync([lap]);
 ```
 
 ### `QueryParams` — Fluent query string builder
