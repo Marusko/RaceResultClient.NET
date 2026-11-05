@@ -371,6 +371,91 @@ public static class SplitTypes
     public const int Leg = 9;
 }
 
+/// <summary>
+/// <see cref="Split.TimeMode"/>: what a split's <see cref="Split.TimeMin"/> and <see cref="Split.TimeMax"/>
+/// are (RaceResult's go-model <c>SplitTimeMode…</c> constants; RaceResult's splits page, "Min./Max.
+/// Pace/Speed/Time"). A split chosen there ("From Split …") is stored as a value of its own, not one of these.
+/// </summary>
+public static class SplitTimeModes
+{
+    /// <summary>Race Time: from the start.</summary>
+    public const int RaceTime = 0;
+    /// <summary>Time of Day.</summary>
+    public const int TimeOfDay = -1;
+    /// <summary>Time From Prev. Split.</summary>
+    public const int FromPreviousSplit = -2;
+    /// <summary>A pace in minutes per kilometre.</summary>
+    public const int MinPerKm = -3;
+    public const int MinPerMile = -4;
+    public const int MinPer100m = -5;
+    /// <summary>A speed in kilometres per hour.</summary>
+    public const int Kmh = -6;
+    public const int Mph = -7;
+    public const int MetresPerSecond = -8;
+}
+
+/// <summary>A split's speed or pace display (RaceResult's go-model <c>SplitSpeed…</c> constants).</summary>
+public static class SplitSpeeds
+{
+    public const int None = 0;
+    public const int MinPerKm = 1;
+    public const int MinPerMile = 2;
+    public const int MinPer100m = 3;
+    public const int Kmh = 4;
+    public const int Mph = 5;
+    public const int MetresPerSecond = 6;
+}
+
+/// <summary>
+/// <see cref="Split.DistanceFrom"/>: what a split's <see cref="Split.Distance"/> is measured from — the start,
+/// the previous split, or another split by its <see cref="Split.Id"/> (RaceResult's "From Split …").
+/// </summary>
+public static class SplitDistanceFrom
+{
+    public const int Start = 0;
+    public const int PreviousSplit = -1;
+}
+
+/// <summary><see cref="Split.DistanceUnit"/>: the units RaceResult's splits page offers.</summary>
+public static class SplitDistanceUnits
+{
+    public const string Meters = "m";
+    public const string Kilometers = "km";
+    public const string Miles = "miles";
+}
+
+/// <summary>RaceResult's types of sport (<see cref="Split.TypeOfSport"/>, "Type of Sport (up to here)").</summary>
+public static class TypesOfSport
+{
+    public const int None = 0;
+    public const int Swimming = 4;
+    public const int Skiing = 5;
+    public const int Other = 10;
+    public const int Cycling = 11;
+    public const int Running = 100;
+    public const int TransitionFirstRead = 250;
+    public const int TransitionLastRead = 251;
+}
+
+/// <summary><see cref="Contest.TimingMode"/>: whether the contest's results (and its splits) are gun or chip time.</summary>
+public static class ContestTimingModes
+{
+    public const int GunTime = 0;
+    public const int ChipTime = 1;
+}
+
+/// <summary>A participant's <see cref="Participant.Status"/> (RaceResult's knowledge base; <c>StatusText</c> gives the name).</summary>
+public static class ParticipantStatuses
+{
+    public const int Regular = 0;
+    public const int OutOfCompetition = 1;
+    public const int Disqualified = 2;
+    public const int DidNotFinish = 3;
+    public const int DidNotStart = 4;
+    /// <summary>Did not show up (registered, never came to the start).</summary>
+    public const int NotPresent = 5;
+}
+
 // ── Custom Fields ─────────────────────────────────────────────────────────────
 
 public enum CustomFieldType
