@@ -373,23 +373,22 @@ public static class SplitTypes
 
 /// <summary>
 /// <see cref="Split.TimeMode"/>: what a split's <see cref="Split.TimeMin"/> and <see cref="Split.TimeMax"/>
-/// are counted in (RaceResult's go-model <c>SplitTimeMode…</c> constants).
+/// are (RaceResult's go-model <c>SplitTimeMode…</c> constants; RaceResult's splits page, "Min./Max.
+/// Pace/Speed/Time"). A split chosen there ("From Split …") is stored as a value of its own, not one of these.
 /// </summary>
 public static class SplitTimeModes
 {
-    /// <summary>From the start (race time).</summary>
+    /// <summary>Race Time: from the start.</summary>
     public const int RaceTime = 0;
-    /// <summary>From the reference split (the one <see cref="Split.DistanceFrom"/> names).</summary>
-    public const int RefSplit = 1;
-    /// <summary>Time of day.</summary>
+    /// <summary>Time of Day.</summary>
     public const int TimeOfDay = -1;
-    /// <summary>From the previous split (the time between the two).</summary>
-    public const int Delta = -2;
-    /// <summary>A pace in minutes per kilometre over the distance from the previous split.</summary>
+    /// <summary>Time From Prev. Split.</summary>
+    public const int FromPreviousSplit = -2;
+    /// <summary>A pace in minutes per kilometre.</summary>
     public const int MinPerKm = -3;
     public const int MinPerMile = -4;
     public const int MinPer100m = -5;
-    /// <summary>A speed in kilometres per hour over the distance from the previous split.</summary>
+    /// <summary>A speed in kilometres per hour.</summary>
     public const int Kmh = -6;
     public const int Mph = -7;
     public const int MetresPerSecond = -8;
@@ -408,36 +407,37 @@ public static class SplitSpeeds
 }
 
 /// <summary>
-/// <see cref="Split.DistanceFrom"/>: the split a split's <see cref="Split.Distance"/> is measured from — its
-/// <see cref="Split.Id"/>, or <see cref="Start"/> (RaceResult: "from the start or from any previous split").
+/// <see cref="Split.DistanceFrom"/>: what a split's <see cref="Split.Distance"/> is measured from — the start,
+/// the previous split, or another split by its <see cref="Split.Id"/> (RaceResult's "From Split …").
 /// </summary>
 public static class SplitDistanceFrom
 {
     public const int Start = 0;
+    public const int PreviousSplit = -1;
 }
 
-/// <summary>
-/// RaceResult's types of sport (<see cref="Split.TypeOfSport"/>). Not in RaceResult's published model:
-/// <see cref="None"/> is the default; the others follow the order of RaceResult's list and are to be
-/// checked against a split set up by hand before they are relied on.
-/// </summary>
+/// <summary><see cref="Split.DistanceUnit"/>: the units RaceResult's splits page offers.</summary>
+public static class SplitDistanceUnits
+{
+    public const string Meters = "m";
+    public const string Kilometers = "km";
+    public const string Miles = "miles";
+}
+
+/// <summary>RaceResult's types of sport (<see cref="Split.TypeOfSport"/>, "Type of Sport (up to here)").</summary>
 public static class TypesOfSport
 {
     public const int None = 0;
-    public const int Running = 1;
-    public const int Cycling = 2;
-    public const int Swimming = 3;
-    public const int InlineSkating = 4;
-    public const int Walking = 5;
-    public const int CrossCountrySkiing = 6;
-    public const int Rowing = 7;
-    public const int Transition = 8;
+    public const int Swimming = 4;
+    public const int Skiing = 5;
+    public const int Other = 10;
+    public const int Cycling = 11;
+    public const int Running = 100;
+    public const int TransitionFirstRead = 250;
+    public const int TransitionLastRead = 251;
 }
 
-/// <summary>
-/// <see cref="Contest.TimingMode"/>: whether the contest's results (and its splits) are gun or chip time.
-/// Not in RaceResult's published model; <see cref="ChipTime"/> is to be checked against a contest set by hand.
-/// </summary>
+/// <summary><see cref="Contest.TimingMode"/>: whether the contest's results (and its splits) are gun or chip time.</summary>
 public static class ContestTimingModes
 {
     public const int GunTime = 0;
