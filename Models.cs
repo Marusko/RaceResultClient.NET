@@ -40,7 +40,7 @@ public record Participant
     public int AgeGroup3 { get; init; }
     public string Club { get; init; } = "";
     public int Contest { get; init; }
-    public int Status { get; init; }
+    public ParticipantStatus Status { get; init; }
     public int Booleans { get; init; }
     public decimal PaidEntryFee { get; init; }
     public string Phone { get; init; } = "";
@@ -87,6 +87,35 @@ public record SaveValueArrayItem(int Bib, [property: JsonPropertyName("PID")] in
 
 public record ImportResult(int Added, int Updated, [property: JsonPropertyName("PIDs")] int[] Pids);
 
+public record ParticipantAndDummyCount(int Participants, int Dummies);
+
+/// <summary>A participant's online-payment data (the parsed form of <see cref="Participant.Opjson"/>).</summary>
+public record OpData
+{
+    public decimal EntryFees { get; init; }
+    public decimal Processed { get; init; }
+    public decimal Received { get; init; }
+    public DateTime Date { get; init; }
+    public OpDataPayment[]? Payments { get; init; }
+}
+
+public record OpDataPayment
+{
+    [JsonPropertyName("ID")]
+    public int Id { get; init; }
+    public DateTime Created { get; init; }
+    public int Method { get; init; }
+    public string Reference { get; init; } = "";
+    public decimal Amount { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public decimal Fees { get; init; }
+    public string Currency { get; init; } = "";
+    public decimal Received { get; init; }
+    public string Comment { get; init; } = "";
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool Canceled { get; init; }
+}
+
 // ── Contests & Age Groups ─────────────────────────────────────────────────────
 
 public record Contest
@@ -114,7 +143,7 @@ public record Contest
     [JsonPropertyName("MinResultID")]
     public int MinResultId { get; init; }
     public decimal MinLapTime { get; init; }
-    public int TimingMode { get; init; }
+    public ContestTimingMode TimingMode { get; init; }
     public string TimingModeFilter { get; init; } = "";
     public string Attributes { get; init; } = "";
     public double OrderPos { get; init; }
@@ -222,6 +251,22 @@ public record RawDataWithAdditionalFields : RawDataEntry
 {
     public int Bib { get; init; }
     public Dictionary<string, JsonElement>? Fields { get; init; }
+}
+
+/// <summary>The short form of a raw-data entry, without the full <see cref="Passing"/>.</summary>
+public record RawDataReduced
+{
+    public string TimingPoint { get; init; } = "";
+    [JsonPropertyName("PID")]
+    public int Pid { get; init; }
+    public decimal Time { get; init; }
+    public bool Invalid { get; init; }
+    [JsonPropertyName("OrderID")]
+    public int OrderId { get; init; }
+    public int Result { get; init; }
+    public bool IsMarker { get; init; }
+    [JsonPropertyName("RSSI")]
+    public int Rssi { get; init; }
 }
 
 public record RawDataDistinctValues
@@ -346,74 +391,100 @@ public record Split
     public string TimingPoint { get; init; } = "";
     public string Backup { get; init; } = "";
     public decimal BackupOffset { get; init; }
-    public int TypeOfSport { get; init; }
+    public TypeOfSport TypeOfSport { get; init; }
     public decimal Distance { get; init; }
     public string DistanceUnit { get; init; } = "";
-    public int DistanceFrom { get; init; }
+    public SplitDistanceFrom DistanceFrom { get; init; }
     public decimal TimeMin { get; init; }
     public decimal TimeMax { get; init; }
     public string Color { get; init; } = "";
     public int OrderPos { get; init; }
-    public int SplitType { get; init; }
+    public SplitType SplitType { get; init; }
     public int SectorFrom { get; init; }
     public int SectorTo { get; init; }
+    /// <summary>
+    /// The speed or pace shown for this split. RaceResult stores one of
+    /// <see cref="SplitSpeed"/>'s values here as text, so <c>((int)SplitSpeed.Kmh).ToString()</c>
+    /// is the value for km/h.
+    /// </summary>
     public string SpeedOrPace { get; init; } = "";
-    public int TimeMode { get; init; }
+    public SplitTimeMode TimeMode { get; init; }
     public string Label { get; init; } = "";
     public int SectorFrom2 { get; init; }
     public int SectorTo2 { get; init; }
 }
 
-public static class SplitTypes
+/// <summary><see cref="Split.SplitType"/> (go-model's <c>SplitType…</c> constants).</summary>
+public enum SplitType
 {
-    public const int Split = 0;
-    public const int Internal = 2;
-    public const int Leg = 9;
+    Split = 0,
+    Internal = 2,
+    Leg = 9
 }
 
 /// <summary>
 /// <see cref="Split.TimeMode"/>: what a split's <see cref="Split.TimeMin"/> and <see cref="Split.TimeMax"/>
-/// are (RaceResult's go-model <c>SplitTimeMode…</c> constants; RaceResult's splits page, "Min./Max.
-/// Pace/Speed/Time"). A split chosen there ("From Split …") is stored as a value of its own, not one of these.
+/// are (go-model's <c>SplitTimeMode…</c> constants; RaceResult's splits page, "Min./Max.
+/// Pace/Speed/Time"). "From Split …" is stored as a value of its own that is none of these, so a
+/// value outside this enum is RaceResult's own encoding of a split reference: round-trip it unchanged.
 /// </summary>
-public static class SplitTimeModes
+public enum SplitTimeMode
 {
     /// <summary>Race Time: from the start.</summary>
-    public const int RaceTime = 0;
+    RaceTime = 0,
     /// <summary>Time of Day.</summary>
-    public const int TimeOfDay = -1;
+    TimeOfDay = -1,
     /// <summary>Time From Prev. Split.</summary>
-    public const int FromPreviousSplit = -2;
+    FromPreviousSplit = -2,
     /// <summary>A pace in minutes per kilometre.</summary>
-    public const int MinPerKm = -3;
-    public const int MinPerMile = -4;
-    public const int MinPer100m = -5;
+    MinPerKm = -3,
+    MinPerMile = -4,
+    MinPer100m = -5,
     /// <summary>A speed in kilometres per hour.</summary>
-    public const int Kmh = -6;
-    public const int Mph = -7;
-    public const int MetresPerSecond = -8;
-}
-
-/// <summary>A split's speed or pace display (RaceResult's go-model <c>SplitSpeed…</c> constants).</summary>
-public static class SplitSpeeds
-{
-    public const int None = 0;
-    public const int MinPerKm = 1;
-    public const int MinPerMile = 2;
-    public const int MinPer100m = 3;
-    public const int Kmh = 4;
-    public const int Mph = 5;
-    public const int MetresPerSecond = 6;
+    Kmh = -6,
+    Mph = -7,
+    MetresPerSecond = -8
 }
 
 /// <summary>
-/// <see cref="Split.DistanceFrom"/>: what a split's <see cref="Split.Distance"/> is measured from — the start,
-/// the previous split, or another split by its <see cref="Split.Id"/> (RaceResult's "From Split …").
+/// A split's speed or pace display (go-model's <c>SplitSpeed…</c> constants).
+/// <see cref="Split.SpeedOrPace"/> holds one of these values as text.
 /// </summary>
-public static class SplitDistanceFrom
+public enum SplitSpeed
 {
-    public const int Start = 0;
-    public const int PreviousSplit = -1;
+    None = 0,
+    MinPerKm = 1,
+    MinPerMile = 2,
+    MinPer100m = 3,
+    Kmh = 4,
+    Mph = 5,
+    MetresPerSecond = 6
+}
+
+/// <summary>
+/// <see cref="Split.DistanceFrom"/>: what a split's <see cref="Split.Distance"/> is measured from — the
+/// start, the previous split, or another split by its <see cref="Split.Id"/> (RaceResult's "From Split …").
+/// Use <see cref="SplitDistanceFromExtensions.FromSplit"/> and
+/// <see cref="SplitDistanceFromExtensions.SplitId"/> for the split-reference form.
+/// </summary>
+public enum SplitDistanceFrom
+{
+    Start = 0,
+    PreviousSplit = -1
+}
+
+/// <summary>The split-reference form of <see cref="SplitDistanceFrom"/>.</summary>
+public static class SplitDistanceFromExtensions
+{
+    /// <summary>Measured from the split with this <see cref="Split.Id"/>.</summary>
+    public static SplitDistanceFrom FromSplit(int splitId) => (SplitDistanceFrom)splitId;
+
+    /// <summary>True when this value references another split rather than naming a fixed origin.</summary>
+    public static bool IsSplitReference(this SplitDistanceFrom value) => (int)value > 0;
+
+    /// <summary>The referenced <see cref="Split.Id"/>, or <c>null</c> for a fixed origin.</summary>
+    public static int? SplitId(this SplitDistanceFrom value)
+        => value.IsSplitReference() ? (int)value : null;
 }
 
 /// <summary><see cref="Split.DistanceUnit"/>: the units RaceResult's splits page offers.</summary>
@@ -425,35 +496,35 @@ public static class SplitDistanceUnits
 }
 
 /// <summary>RaceResult's types of sport (<see cref="Split.TypeOfSport"/>, "Type of Sport (up to here)").</summary>
-public static class TypesOfSport
+public enum TypeOfSport
 {
-    public const int None = 0;
-    public const int Swimming = 4;
-    public const int Skiing = 5;
-    public const int Other = 10;
-    public const int Cycling = 11;
-    public const int Running = 100;
-    public const int TransitionFirstRead = 250;
-    public const int TransitionLastRead = 251;
+    None = 0,
+    Swimming = 4,
+    Skiing = 5,
+    Other = 10,
+    Cycling = 11,
+    Running = 100,
+    TransitionFirstRead = 250,
+    TransitionLastRead = 251
 }
 
 /// <summary><see cref="Contest.TimingMode"/>: whether the contest's results (and its splits) are gun or chip time.</summary>
-public static class ContestTimingModes
+public enum ContestTimingMode
 {
-    public const int GunTime = 0;
-    public const int ChipTime = 1;
+    GunTime = 0,
+    ChipTime = 1
 }
 
 /// <summary>A participant's <see cref="Participant.Status"/> (RaceResult's knowledge base; <c>StatusText</c> gives the name).</summary>
-public static class ParticipantStatuses
+public enum ParticipantStatus
 {
-    public const int Regular = 0;
-    public const int OutOfCompetition = 1;
-    public const int Disqualified = 2;
-    public const int DidNotFinish = 3;
-    public const int DidNotStart = 4;
+    Regular = 0,
+    OutOfCompetition = 1,
+    Disqualified = 2,
+    DidNotFinish = 3,
+    DidNotStart = 4,
     /// <summary>Did not show up (registered, never came to the start).</summary>
-    public const int NotPresent = 5;
+    NotPresent = 5
 }
 
 // ── Custom Fields ─────────────────────────────────────────────────────────────
@@ -591,7 +662,31 @@ public record Setting
 }
 
 public record UserRight([property: JsonPropertyName("UserID")] int UserId, string UserName, string UserPic,
-    Dictionary<string, string[]> Rights);
+    Dictionary<string, string[]> Rights)
+{
+    /// <summary>
+    /// Whether this user holds <paramref name="right"/>, written as <c>group</c> or <c>group.detail</c>
+    /// (go-model's <c>UserRights.Has</c>). <c>"*"</c> as a group or a detail grants everything under it.
+    /// </summary>
+    public bool Has(string right) => UserRights.Has(Rights, right);
+}
+
+/// <summary>Reads a rights map the way go-model's <c>UserRights</c> does.</summary>
+public static class UserRights
+{
+    /// <inheritdoc cref="UserRight.Has"/>
+    public static bool Has(IReadOnlyDictionary<string, string[]>? rights, string right)
+    {
+        if (rights is null) return false;
+        if (rights.ContainsKey("*")) return true;
+
+        var parts = right.Split('.');
+        if (!rights.TryGetValue(parts[0], out var details)) return false;
+        if (parts.Length == 1) return true;
+
+        return details is not null && details.Any(r => r == "*" || r == parts[1]);
+    }
+}
 
 /// <summary>Login credentials. Populate only the fields appropriate for your auth method.</summary>
 public sealed class LoginOptions
@@ -703,6 +798,52 @@ public record WebHook
     public int OrderPos { get; init; }
 }
 
+/// <summary>The body a web hook posts to its <see cref="WebHook.Url"/>.</summary>
+public record WebHookMessage
+{
+    [JsonPropertyName("EventID")]
+    public string EventId { get; init; } = "";
+    [JsonPropertyName("WebHookID")]
+    public int WebHookId { get; init; }
+    public DateTime TimeStamp { get; init; }
+    public Dictionary<string, JsonElement>? Values { get; init; }
+}
+
+// ── Triggers (push subscriptions) ─────────────────────────────────────────────
+
+public enum TriggerType
+{
+    NewTime = 0,
+    NewParticipant = 1,
+    NewChatMessage = 3,
+    NewRawData = 4,
+    Exporter = 5,
+    NewRawDataSimple = 6,
+    NewSplit = 7,
+    ModJobIdSimple = 8,
+    SettingValue = 9,
+    NewRawDataV2 = 10
+}
+
+/// <summary>What a trigger subscribes to.</summary>
+public record TriggerSettings
+{
+    public TriggerType TriggerType { get; init; }
+    [JsonPropertyName("PID")]
+    public int[]? Pid { get; init; }
+    [JsonPropertyName("ResultID")]
+    public int[]? ResultId { get; init; }
+    [JsonPropertyName("ContestID")]
+    public int[]? ContestId { get; init; }
+    public string[]? SplitName { get; init; }
+    [JsonPropertyName("ExporterID")]
+    public int ExporterId { get; init; }
+    public string[]? SettingNames { get; init; }
+    public string Filter { get; init; } = "";
+    public RawDataFilter? RawDataFilter { get; init; }
+    public string[]? ReturnFields { get; init; }
+}
+
 // ── Misc ──────────────────────────────────────────────────────────────────────
 
 public record BibRange
@@ -808,6 +949,18 @@ public record TeamScore
 
 public record SimpleApiItem(bool Disabled, string Key, [property: JsonPropertyName("URL")] string Url, string Label);
 
+/// <summary>One row of the event file's generic lookup table.</summary>
+public record TableValue
+{
+    [JsonPropertyName("ID")]
+    public int Id { get; init; }
+    public string Index1 { get; init; } = "";
+    public string Index2 { get; init; } = "";
+    public string Index3 { get; init; } = "";
+    public string Index4 { get; init; } = "";
+    public string Value { get; init; } = "";
+}
+
 public record ChatMessage(
     [property: JsonPropertyName("i")] int Id,
     [property: JsonPropertyName("u")] string UserName,
@@ -871,6 +1024,38 @@ public record RegistrationRequestRecord(
     Dictionary<string, object?> Record,
     string[] Expressions);
 
+public record RegistrationRequestResponse
+{
+    public RegistrationRequestResponseRecord[] Records { get; init; } = [];
+    public InvoicePaymentTerms? PaymentTerms { get; init; }
+}
+
+public record RegistrationRequestResponseRecord
+{
+    public Dictionary<string, JsonElement>? Expressions { get; init; }
+    public EntryFeeItem[]? EntryFees { get; init; }
+    public bool HasDuplicate { get; init; }
+}
+
+/// <summary>go-model's <c>invoice.PaymentTerms</c>.</summary>
+public record InvoicePaymentTerms
+{
+    public int Method { get; init; }
+    public string AccountOwner { get; init; } = "";
+    [JsonPropertyName("IBAN")]
+    public string Iban { get; init; } = "";
+    [JsonPropertyName("BIC")]
+    public string Bic { get; init; } = "";
+    public string AccountNo { get; init; } = "";
+    public string BranchNo { get; init; } = "";
+    public string BankName { get; init; } = "";
+    [JsonPropertyName("MandateID")]
+    public string MandateId { get; init; } = "";
+    public int DueDays { get; init; }
+    public string Reference { get; init; } = "";
+    public string Terms { get; init; } = "";
+}
+
 public record UserDefinedField(string Name, string Expression, string Note, string Group);
 
 public record OverwriteValue([property: JsonPropertyName("ID")] int Id, [property: JsonPropertyName("PID")] int Pid, [property: JsonPropertyName("ResultID")] int ResultId, decimal Value);
@@ -878,6 +1063,17 @@ public record OverwriteValue([property: JsonPropertyName("ID")] int Id, [propert
 // ── Archives ──────────────────────────────────────────────────────────────────
 
 public record ArchiveMatch([property: JsonPropertyName("ID")] int Id, string FirstName, string LastName, int Year);
+
+public record ArchiveEvent
+{
+    [JsonPropertyName("ID")]
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public string Date { get; init; } = "";
+    public ArchiveContest[]? Contests { get; init; }
+}
+
+public record ArchiveContest([property: JsonPropertyName("ID")] int Id, string Name);
 
 public record ArchiveParticipant
 {

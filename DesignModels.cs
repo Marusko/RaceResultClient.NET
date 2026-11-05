@@ -46,6 +46,12 @@ public enum CertificateBarcodeType { NoBarcode = 0, Code39 = 1, CodeEan13 = 2, C
 
 public enum CertificatePictureStretchMode { Stretch = 0, NoStretch = 1 }
 
+/// <summary><see cref="CertificateElement.Alignment"/> (go-model's <c>ALeft</c>/<c>ACenter</c>/<c>ARight</c>).</summary>
+public enum CertificateAlignment { Left = 1, Center = 2, Right = 3 }
+
+/// <summary><see cref="CertificateElement.VAlignment"/> (go-model's <c>ATop</c>/<c>AMiddle</c>/<c>ABottom</c>).</summary>
+public enum CertificateVAlignment { Top = 0, Middle = 1, Bottom = 2 }
+
 public record Certificate
 {
     [JsonPropertyName("CertificateName")]
@@ -104,9 +110,9 @@ public record CertificateElement
     public int FontColor { get; init; }
     [JsonPropertyName("FontColorCMYK")]
     public string FontColorCmyk { get; init; } = "";
-    public int Alignment { get; init; }
+    public CertificateAlignment Alignment { get; init; }
     [JsonPropertyName("vAlignment")]
-    public int VAlignment { get; init; }
+    public CertificateVAlignment VAlignment { get; init; }
     public int Page { get; init; }
     public int Rotation { get; init; }
     [JsonPropertyName("DF")]

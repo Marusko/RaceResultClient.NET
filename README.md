@@ -67,6 +67,13 @@ await client.Public.LoginAsync(new LoginOptions { RrUserToken = "token" });
 ```
 
 After login, the session token is stored internally and sent with every subsequent request as a `Bearer` token.
+A session obtained elsewhere can be used instead of logging in, and the request timeout — 30 seconds,
+as in go-webapi — can be changed before the first request:
+
+```csharp
+client.SessionId = sessionIdFromElsewhere;   // go-webapi's SetSessionID
+client.Timeout = TimeSpan.FromMinutes(2);    // go-webapi's SetTimeout
+```
 
 ### 3. Get an event client
 
@@ -217,32 +224,80 @@ await ev.History.GetAsync(Identifier.Id(99));
 
 ### RaceResult's codes
 
-Some model fields are numbers (or strings) whose meaning is RaceResult's. The library names them, so a
-caller keeps none of its own; the values are RaceResult's go-model constants or what RaceResult's own
-splits page writes (checked against a splits definition set up by hand and exported):
+Where a model field or a parameter is a choice among RaceResult's own numbers, the library takes an
+`enum`, not an `int`, so a caller keeps no RaceResult numbers of its own. Identifiers stay `int` — a
+PID, a bib, a contest, a result or a split `Id` is a number, not a choice. The values are
+RaceResult's go-model constants or what RaceResult's own splits page writes (checked against a splits
+definition set up by hand and exported):
 
-| Class | For | Values |
+| Enum | Field | Values |
 |---|---|---|
-| `SplitTypes` | `Split.SplitType` | `Split` 0, `Internal` 2, `Leg` 9 |
-| `SplitTimeModes` | `Split.TimeMode` (what `TimeMin`/`TimeMax` are) | `RaceTime` 0, `TimeOfDay` -1, `FromPreviousSplit` -2, `MinPerKm` -3, `MinPerMile` -4, `MinPer100m` -5, `Kmh` -6, `Mph` -7, `MetresPerSecond` -8 ("From Split …" is stored as a value of its own) |
-| `SplitDistanceFrom` | `Split.DistanceFrom` | `Start` 0, `PreviousSplit` -1; otherwise the `Id` of the split it is measured from |
+| `SplitType` | `Split.SplitType` | `Split` 0, `Internal` 2, `Leg` 9 |
+| `SplitTimeMode` | `Split.TimeMode` (what `TimeMin`/`TimeMax` are) | `RaceTime` 0, `TimeOfDay` -1, `FromPreviousSplit` -2, `MinPerKm` -3, `MinPerMile` -4, `MinPer100m` -5, `Kmh` -6, `Mph` -7, `MetresPerSecond` -8 |
+| `SplitDistanceFrom` | `Split.DistanceFrom` | `Start` 0, `PreviousSplit` -1, or `SplitDistanceFromExtensions.FromSplit(id)` |
+| `TypeOfSport` | `Split.TypeOfSport` | `None` 0, `Swimming` 4, `Skiing` 5, `Other` 10, `Cycling` 11, `Running` 100, `TransitionFirstRead` 250, `TransitionLastRead` 251 |
+| `ContestTimingMode` | `Contest.TimingMode` | `GunTime` 0, `ChipTime` 1 |
+| `ParticipantStatus` | `Participant.Status` | `Regular` 0, `OutOfCompetition` 1, `Disqualified` 2, `DidNotFinish` 3, `DidNotStart` 4, `NotPresent` 5 |
+| `CustomFieldType` | `CustomField.FieldType` | `Text` 0 … `Transponder` 10 |
+| `VoucherType` | `Voucher.Type` | `Amount` 0, `Percent` 1, `FirstReg` 2, `PrevReg` 3 |
+| `WebHookType` | `WebHook.Type` | `ParticipantNew` 0 … `ModJobIdSettings` 4 |
+| `TriggerType` | `TriggerSettings.TriggerType` | `NewTime` 0 … `NewRawDataV2` 10 |
+| `StatisticAggregation` | `Statistics.Aggregation`, `Statistics.ComputeAsync`, `Data.TransformationAsync` | `Count` 1, `Minimum` 2, `Maximum` 3, `Mean` 4, `Sum` 5 |
+| `CertificateAlignment` / `CertificateVAlignment` | `CertificateElement.Alignment` / `.VAlignment` | `Left` 1, `Center` 2, `Right` 3 / `Top` 0, `Middle` 1, `Bottom` 2 |
+
+The design enums (`PageSize`, `PageFormat`, `CertificateElementType`, `LabelAlignment`,
+`ListShowAt`, `ListPageBreak`, `EmailTemplateType`, `CertificateSetType`, …) cover the same ground
+for the design objects.
+
+Two fields RaceResult stores as text keep named string constants instead, since a value outside the
+set is still valid text:
+
+| Class | Field | Values |
+|---|---|---|
 | `SplitDistanceUnits` | `Split.DistanceUnit` | `m`, `km`, `miles` |
-| `SplitSpeeds` | a split's speed or pace display | `None` 0 … `MetresPerSecond` 6 |
-| `TypesOfSport` | `Split.TypeOfSport` | `None` 0, `Swimming` 4, `Skiing` 5, `Other` 10, `Cycling` 11, `Running` 100, `TransitionFirstRead` 250, `TransitionLastRead` 251 |
-| `ContestTimingModes` | `Contest.TimingMode` | `GunTime` 0, `ChipTime` 1 |
-| `ParticipantStatuses` | `Participant.Status` | `Regular` 0, `OutOfCompetition` 1, `Disqualified` 2, `DidNotFinish` 3, `DidNotStart` 4, `NotPresent` 5 |
+| `SplitSpeed` | `Split.SpeedOrPace` (the number as text) | `None` 0 … `MetresPerSecond` 6 |
 
 ```csharp
 // Lap 2: 5 km from the previous split, between 5 s and 1 min after it, cycling
 var lap = new Split
 {
     Contest = 1, Name = "Lap2", TimingPoint = "FINISH",
-    TypeOfSport = TypesOfSport.Cycling,
-    Distance = 5, DistanceUnit = SplitDistanceUnits.Kilometers, DistanceFrom = SplitDistanceFrom.PreviousSplit,
-    TimeMin = 5, TimeMax = 60, TimeMode = SplitTimeModes.FromPreviousSplit,
+    TypeOfSport = TypeOfSport.Cycling,
+    Distance = 5, DistanceUnit = SplitDistanceUnits.Kilometers,
+    DistanceFrom = SplitDistanceFrom.PreviousSplit,
+    TimeMin = 5, TimeMax = 60, TimeMode = SplitTimeMode.FromPreviousSplit,
 };
 await ev.Splits.SaveAsync([lap]);
+
+// Measured from another split instead
+var fromSplit = lap with { DistanceFrom = SplitDistanceFromExtensions.FromSplit(13) };
+int? origin = fromSplit.DistanceFrom.SplitId();   // 13
 ```
+
+Every enum is backed by its RaceResult number and serializes as that number, so a value RaceResult
+adds later still round-trips: `Split.TimeMode` also carries RaceResult's own encoding of
+"From Split …" (a value of its own, outside `SplitTimeMode`), and reading and saving a split keeps
+it unchanged.
+
+### Models go-webapi has no endpoint for
+
+go-model carries a few types that no go-webapi endpoint returns; this library ports them too, so a
+caller that meets them elsewhere (a web hook's body, a trigger subscription, a participant's payment
+JSON) does not have to write them itself:
+
+| Type | Where it comes from |
+|---|---|
+| `WebHookMessage` | the body a web hook posts to its `WebHook.Url` |
+| `TriggerSettings`, `TriggerType` | a push-trigger subscription |
+| `OpData`, `OpDataPayment` | the parsed form of `Participant.Opjson` |
+| `RegistrationRequestResponse`, `RegistrationRequestResponseRecord`, `InvoicePaymentTerms` | the answer to a `RegistrationRequest` (`Registrations.ProcessAsync` returns the raw `JsonElement`; deserialize it into these) |
+| `RawDataReduced` | the short form of a raw-data entry, without the `Passing` |
+| `TableValue` | a row of the event file's generic lookup table |
+| `ParticipantAndDummyCount` | a participant count split into real and dummy records |
+| `ArchiveEvent`, `ArchiveContest` | an archive's events and their contests |
+
+`UserRight.Has("participants.edit")` reads a rights map the way go-model's `UserRights.Has` does,
+`"*"` as a group or a detail included.
 
 ### `QueryParams` — Fluent query string builder
 
@@ -363,7 +418,9 @@ await ev.Settings.SaveAsync("EventName", "My Updated Race Name");
 - **`ApiClient`** owns the `HttpClient` and session state. It is the root object and should be disposed when done.
 - **`EventApiClient`** is a lightweight façade created via `client.ForEvent(id)`. It holds only an event ID string and a reference to `ApiClient` — no state of its own. Endpoint group objects (e.g. `ev.Participants`) are instantiated on each property access (no caching overhead, no shared state).
 - **All models** use C# `record` types with `init`-only properties, making them immutable and copy-friendly.
-- **Serialization** uses `System.Text.Json` throughout, with case-insensitive deserialization and `JsonStringEnumConverter` registered globally.
+- **Serialization** uses `System.Text.Json` throughout, with case-insensitive deserialization. Enums
+  serialize as their numbers, as Go's `encoding/json` does; the certificate page-size/format enums
+  are the exception and serialize as strings, matching go-model's own marshallers.
 - **`CancellationToken`** is a last optional parameter on every async method, defaulting to `default`.
 
 ---

@@ -38,12 +38,37 @@ public sealed class ApiClient : IDisposable
 
         _http = handler is null ? new HttpClient() : new HttpClient(handler, disposeHandler: true);
         _http.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
+        _http.Timeout = DefaultTimeout;
+    }
+
+    // ── Timeout ──────────────────────────────────────────────────────────────
+
+    /// <summary>The request timeout a new client starts with, as in go-webapi.</summary>
+    public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// The timeout for every following request. Set it before the first request:
+    /// <see cref="HttpClient"/> refuses the change once a request has been sent.
+    /// </summary>
+    public TimeSpan Timeout
+    {
+        get => _http.Timeout;
+        set => _http.Timeout = value;
     }
 
     // ── Session ──────────────────────────────────────────────────────────────
 
     internal void SetSession(string sessionId) => _sessionId = sessionId;
-    public string SessionId => _sessionId;
+
+    /// <summary>
+    /// The session ID sent as the bearer token. Assign one to resume a session obtained elsewhere,
+    /// instead of logging in (go-webapi's <c>SetSessionID</c>).
+    /// </summary>
+    public string SessionId
+    {
+        get => _sessionId;
+        set => _sessionId = string.IsNullOrEmpty(value) ? "0" : value;
+    }
 
     // ── Endpoint group factories ─────────────────────────────────────────────
 

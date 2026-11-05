@@ -9,7 +9,9 @@ namespace RaceResultClient;
 /// </summary>
 public sealed class EventApiClient
 {
-    internal readonly string EventId;
+    /// <summary>The ID of the event these endpoints address.</summary>
+    public string EventId { get; }
+
     internal readonly ApiClient Client;
 
     internal EventApiClient(string eventId, ApiClient client)

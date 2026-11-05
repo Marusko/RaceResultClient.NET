@@ -129,17 +129,21 @@ public sealed class DataEndpoints(EventApiClient e)
         return e.GetAsync<JsonElement[][]>("data/list", q, ct);
     }
 
-    /// <summary>Creates a min/max/sum/count/avg transformation (pivot) of participant data.</summary>
+    /// <summary>
+    /// Creates a min/max/sum/count/avg transformation (pivot) of participant data.
+    /// <paramref name="mode"/> picks the aggregation, the same codes
+    /// <see cref="StatisticsEndpoints.ComputeAsync"/> takes.
+    /// </summary>
     public Task<JsonElement[][]> TransformationAsync(
         string colField, IEnumerable<string> rowFields, string filter, string field,
-        int mode, bool sortByValue, CancellationToken ct = default)
+        StatisticAggregation mode, bool sortByValue, CancellationToken ct = default)
     {
         var q = new QueryParams()
             .Add("colField", colField)
             .AddArray("rowFields", rowFields)
             .Add("filter", filter)
             .Add("field", field)
-            .AddAlways("mode", mode)
+            .AddAlways("mode", (int)mode)
             .Add("sortByValue", sortByValue);
         return e.GetAsync<JsonElement[][]>("data/transformation", q, ct);
     }
