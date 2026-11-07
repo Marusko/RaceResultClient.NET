@@ -113,9 +113,8 @@ var result = await ev.Participants.NewAsync(bib: 42, contest: 1);
 
 // Submit a timing passing
 await ev.Times.AddAsync(new[] {
-    new Passing {
-        Transponder = "ABC123",
-        UtcTime = DateTime.UtcNow
+    new PassingToProcess {
+        Passing = new Passing { Transponder = "ABC123", UtcTime = DateTime.UtcNow }
     }
 });
 ```
@@ -378,16 +377,28 @@ foreach (var row in rows)
 ```csharp
 var responses = await ev.Times.AddAsync(new[]
 {
-    new Passing
+    // A decoder's passing: RaceResult finds the participant by the transponder.
+    new PassingToProcess
     {
-        Transponder = "A1B2C3",
-        UtcTime = DateTime.UtcNow,
-        DeviceName = "Finish Line Reader"
+        Passing = new Passing
+        {
+            Transponder = "A1B2C3",
+            UtcTime = DateTime.UtcNow,
+            DeviceName = "Finish Line Reader"
+        }
+    },
+    // A time by bib and timing point, in seconds of the day; the raw data shows the device.
+    new PassingToProcess
+    {
+        Bib = 42,
+        TimingPoint = "Finish",
+        Time = 36000.5m,
+        Passing = new Passing { DeviceId = "Timy", DeviceName = "Finish line" }
     }
 });
 
 foreach (var r in responses)
-    Console.WriteLine($"Bib {r.ResultId}: {r.Time} at {r.TimingPoint}");
+    Console.WriteLine($"Raw data {r.RawDataId}: result {r.ResultId} at {r.TimingPoint}");
 ```
 
 ### Batch-update participant fields

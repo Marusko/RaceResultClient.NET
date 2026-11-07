@@ -612,9 +612,12 @@ public sealed class TimesEndpoints(EventApiClient e)
               .Add("contest", contest).Add("result", result).Add("filter", filter), ct);
 
     /// <summary>
-    /// Submits one or more passings for timing. Returns processing results per passing.
+    /// Submits one or more passings for timing (<c>times/add</c>). Each is a <see cref="PassingToProcess"/>:
+    /// a decoder's <see cref="Passing"/> (its transponder), or a bib and a timing point with the time in
+    /// seconds of the day, the passing then carrying the device it is shown with. Returns, per passing,
+    /// what RaceResult made of it, its raw data row's id among it.
     /// </summary>
-    public Task<TimesAddResponseItem[]> AddAsync(IEnumerable<Passing> passings,
+    public Task<TimesAddResponseItem[]> AddAsync(IEnumerable<PassingToProcess> passings,
         string[]? returnFields = null, int contestFilter = 0,
         bool ignoreBibToBibAssign = false, CancellationToken ct = default)
     {
