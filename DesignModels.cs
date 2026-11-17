@@ -162,7 +162,16 @@ public enum CertificateElementType
     ChipBarcode = 11, BibPosition = 12
 }
 
-public enum CertificateBarcodeType { NoBarcode = 0, Code39 = 1, CodeEan13 = 2, Code128 = 3 }
+public enum CertificateBarcodeType { NoBarcode = 0, Code39 = 1, CodeEan13 = 2, Code128 = 3, QrCode = 100 }
+
+/// <summary><see cref="Certificate.Holes"/>: the punched holes of a bib, as RaceResult's certificates page lists them.</summary>
+public enum CertificateHoles { None = 0, Normal = 1, Mtb = 2, ItsDuo = 3, ItsSingle = 4, Special = 99 }
+
+/// <summary><see cref="Certificate.ChipType"/>, as RaceResult's certificates page lists it.</summary>
+public enum CertificateChipType { Spacer = 0, Plain = 1 }
+
+/// <summary><see cref="Certificate.Machine"/>: the bib printer, as RaceResult's certificates page lists it.</summary>
+public enum CertificateMachine { Indigo = 1, Konica = 2 }
 
 public enum CertificatePictureStretchMode { Stretch = 0, NoStretch = 1 }
 
@@ -192,7 +201,7 @@ public record Certificate
     public int CutRight { get; init; }
     public int DistanceVertical { get; init; }
     public int DistanceHorizontal { get; init; }
-    public int Holes { get; init; }
+    public CertificateHoles Holes { get; init; }
     public string SpecialHoles { get; init; } = "";
     public string Substrate { get; init; } = "";
     [JsonPropertyName("RGBBlackToCMYK")]
@@ -205,8 +214,8 @@ public record Certificate
     public bool Reverse { get; init; }
     public bool RoundedCorners { get; init; }
     public bool PlotterMarks { get; init; }
-    public int ChipType { get; init; }
-    public int Machine { get; init; }
+    public CertificateChipType ChipType { get; init; }
+    public CertificateMachine Machine { get; init; }
     public int BlockSize { get; init; }
     public int Version { get; init; }
     [JsonPropertyName("Fields")]
@@ -228,7 +237,7 @@ public record Certificate
 
     /// <summary>
     /// Where the holes are punched, (x, y) in mm from the top left, for <see cref="Holes"/>:
-    /// 1 normal, 2 MTB, 3 duo (two chips), 4 single, 99 <see cref="SpecialHoles"/> ("x:y;x:y;…").
+    /// <see cref="CertificateHoles"/>: normal, MTB, ITS duo (two chips), ITS single, or special: <see cref="SpecialHoles"/> ("x:y;x:y;…").
     /// Empty for any other value (go-model's <c>Certificate.GetHoles</c>).
     /// </summary>
     public (decimal X, decimal Y)[] GetHoles()
@@ -242,11 +251,11 @@ public record Certificate
 
         switch (Holes)
         {
-            case 1 or 2:
+            case CertificateHoles.Normal or CertificateHoles.Mtb:
                 Add(cl + 9, ct + 9);
                 Add(w - cr - 9, ct + 9);
                 break;
-            case 3 or 4:
+            case CertificateHoles.ItsDuo or CertificateHoles.ItsSingle:
                 // lower chip
                 Add(cl + 30, h - cb - 9.5m);
                 Add(cl + 30, h - cb - 22);
@@ -254,7 +263,7 @@ public record Certificate
                 Add(w - cr - 30, h - cb - 22);
 
                 // upper chip
-                if (Holes == 3) // duo
+                if (Holes == CertificateHoles.ItsDuo)
                 {
                     Add(cl + 30, h - cb - 41.5m);
                     Add(cl + 30, h - cb - 54);
@@ -266,33 +275,33 @@ public record Certificate
 
         switch (Holes)
         {
-            case 1: // normal
+            case CertificateHoles.Normal:
                 Add(cl + 9, h - cb - 9);
                 Add(w - cr - 9, h - cb - 9);
                 break;
 
-            case 2: // mtb
+            case CertificateHoles.Mtb:
                 // go-model's decimal has 4 places, so its halving truncates there
                 var middle = cl + Math.Truncate((w - cl - cr) / 2 * 10000) / 10000;
                 Add(middle - 10, h - cb - 9);
                 Add(middle + 10, h - cb - 9);
                 break;
 
-            case 3: // duo: bib top holes, then bib bottom holes
+            case CertificateHoles.ItsDuo: // bib top holes, then bib bottom holes
                 Add(cl + 9, ct + 83 + 9);
                 Add(w - cr - 9, ct + 83 + 9);
                 Add(cl + 9, ct + 233 - 9);
                 Add(w - cr - 9, ct + 233 - 9);
                 break;
 
-            case 4: // single: bib top holes, then bib bottom holes
+            case CertificateHoles.ItsSingle: // bib top holes, then bib bottom holes
                 Add(cl + 9, ct + 85 + 9);
                 Add(w - cr - 9, ct + 85 + 9);
                 Add(cl + 9, ct + 265 - 9);
                 Add(w - cr - 9, ct + 265 - 9);
                 break;
 
-            case 99: // special
+            case CertificateHoles.Special:
                 foreach (var s in SpecialHoles.Split(';'))
                 {
                     var c = s.Split(':');
@@ -429,6 +438,39 @@ public record Label
 public enum ListShowAt { Never = 0, FirstPage = 1, EveryPage = 2, LastPage = 3 }
 public enum ListPageBreak { NoPageBreak = 0, NewPage = 1, KeepTogether = 2, NewColumn = 3, Repeat = 4 }
 
+/// <summary>What a list's sort order does (<see cref="ListOrder.Grouping2"/>), as RaceResult's list settings list it.</summary>
+public enum ListGrouping
+{
+    /// <summary>"-": sorting only.</summary>
+    None = 0,
+    Grouping = 1,
+    /// <summary>"Filter with &lt;Show All&gt;".</summary>
+    FilterWithShowAll = 2,
+    /// <summary>"Filter with &lt;Show All&gt; + &lt;Ignore&gt;".</summary>
+    FilterWithShowAllAndIgnore = 3,
+    Filter = 4
+}
+
+/// <summary>A filtering sort order's first choice (<see cref="ListOrder.GroupFilterDefault"/>).</summary>
+public enum ListGroupFilterDefault
+{
+    ShowAll = 0,
+    /// <summary>"&lt;First Value&gt;".</summary>
+    FirstValue = 1,
+    /// <summary>"&lt;Ignore&gt;".</summary>
+    Ignore = 2
+}
+
+/// <summary>Which column a narrow screen hides (<see cref="ListField.ResponsiveHide"/>).</summary>
+public enum ListResponsiveHide
+{
+    /// <summary>"Hide column last".</summary>
+    HideLast = -1,
+    Automatic = 0,
+    /// <summary>"Hide column first".</summary>
+    HideFirst = 1
+}
+
 public record List
 {
     [JsonPropertyName("ListName")]
@@ -516,8 +558,8 @@ public record ListOrder
     public string Expression { get; init; } = "";
     public bool Descending { get; init; }
     [JsonPropertyName("Grouping")]
-    public int Grouping2 { get; init; }
-    public int GroupFilterDefault { get; init; }
+    public ListGrouping Grouping2 { get; init; }
+    public ListGroupFilterDefault GroupFilterDefault { get; init; }
     public string GroupFilterLabel { get; init; } = "";
     public ListPageBreak PageBreak { get; init; }
     public string FontName { get; init; } = "";
@@ -555,7 +597,7 @@ public record ListField
     public decimal Position { get; init; }
     public string DynamicFormat { get; init; } = "";
     public bool PreviewOnly { get; init; }
-    public int ResponsiveHide { get; init; }
+    public ListResponsiveHide ResponsiveHide { get; init; }
 }
 
 public record ListSelectorResult([property: JsonPropertyName("ResultID")] int ResultId, [property: JsonPropertyName("ResultID2")] int ResultId2, string ShowAs);
@@ -764,6 +806,12 @@ public record RegistrationStep
     public string ButtonText { get; init; } = "";
 }
 
+/// <summary>For a group registration, which registrations a "show if" condition looks at (<see cref="RegistrationElement.ShowIfMode"/>, <see cref="RegistrationElement.ShowIfCurrMode"/>).</summary>
+public enum RegistrationShowIfMode { FirstRegistration = 0, AnyRegistration = 1, AllRegistrations = 2 }
+
+/// <summary>Where a registration field's default comes from (<see cref="RegistrationField.DefaultValueType"/>).</summary>
+public enum RegistrationDefaultValueType { Value = 0, UrlParameter = 1 }
+
 public record RegistrationElement
 {
     public string Type { get; init; } = "";
@@ -773,9 +821,9 @@ public record RegistrationElement
     public RaceResultDateTime EnabledTo { get; init; }
     public RegistrationField? Field { get; init; }
     public string ShowIf { get; init; } = "";
-    public int ShowIfMode { get; init; }
+    public RegistrationShowIfMode ShowIfMode { get; init; }
     public string ShowIfCurr { get; init; } = "";
-    public int ShowIfCurrMode { get; init; }
+    public RegistrationShowIfMode ShowIfCurrMode { get; init; }
     public bool ShowIfInitial { get; init; }
     public RegistrationStyle[]? Styles { get; init; }
     public string ClassName { get; init; } = "";
@@ -792,7 +840,7 @@ public record RegistrationField
     public string ControlType { get; init; } = "";
     public int Mandatory { get; init; }
     public string DefaultValue { get; init; } = "";
-    public int DefaultValueType { get; init; }
+    public RegistrationDefaultValueType DefaultValueType { get; init; }
     public string Placeholder { get; init; } = "";
     public string Unique { get; init; } = "";
     public string Special { get; init; } = "";

@@ -824,6 +824,9 @@ public record PresenterScreen
     public string LayoutMode { get; init; } = "";
 }
 
+/// <summary><see cref="PresenterWindow.ScrollBar"/>, as RaceResult's presenter settings list it.</summary>
+public enum PresenterScrollBar { Normal = 0, Hide = 1, Thin = 2 }
+
 public record PresenterWindow
 {
     public string ItemType { get; init; } = "";
@@ -839,7 +842,7 @@ public record PresenterWindow
     public string ScrollMode { get; init; } = "";
     public int PageTime { get; init; }
     public int FontSize { get; init; }
-    public int ScrollBar { get; init; }
+    public PresenterScrollBar ScrollBar { get; init; }
     public string Filter { get; init; } = "";
     public bool ShowFilter { get; init; }
     public bool IgnoreManualPassings { get; init; }

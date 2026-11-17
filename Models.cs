@@ -133,7 +133,7 @@ public record Contest
     public decimal Length { get; init; }
     public string LengthUnit { get; init; } = "";
     public string TimeFormat { get; init; } = "";
-    public int TimeRounding { get; init; }
+    public TimeRounding TimeRounding { get; init; }
     public int StartTransponder { get; init; }
     public int StartResult { get; init; }
     public decimal TimeDifference { get; init; }
@@ -342,7 +342,7 @@ public record RawDataRule
     public int ResultId { get; init; }
     [JsonPropertyName("ContestID")]
     public int ContestId { get; init; }
-    public int Mode { get; init; }
+    public RawDataRuleMode Mode { get; init; }
     public int N { get; init; }
     public int Min { get; init; }
     public decimal MinOffset { get; init; }
@@ -362,7 +362,7 @@ public record Result
     public string Formula { get; init; } = "";
     public string TimeFormat { get; init; } = "";
     public string Location { get; init; } = "";
-    public int TimeRounding { get; init; }
+    public TimeRounding TimeRounding { get; init; }
     public string Group { get; init; } = "";
 }
 
@@ -513,8 +513,104 @@ public enum TypeOfSport
     Other = 10,
     Cycling = 11,
     Running = 100,
+    /// <summary>"Transition".</summary>
     TransitionFirstRead = 250,
-    TransitionLastRead = 251
+    TransitionLastRead = 251,
+    /// <summary>"This is the Start (first read)".</summary>
+    StartFirstRead = 253,
+    /// <summary>"Start Check".</summary>
+    StartCheck = 254,
+    /// <summary>"This is the Start (last read)".</summary>
+    StartLastRead = 255
+}
+
+/// <summary>
+/// How a result's time is rounded (<see cref="Contest.TimeRounding"/>, <see cref="Result.TimeRounding"/>):
+/// up, down (negative) or to the nearest (10 more), to the second, tenth, hundredth or thousandth,
+/// or to the minute (100 up). As RaceResult's contest and result pages list them.
+/// </summary>
+public enum TimeRounding
+{
+    /// <summary>"-": no rounding.</summary>
+    None = 0,
+    UpToSecond = 1, DownToSecond = -1, NearestSecond = 11,
+    UpToTenth = 2, DownToTenth = -2, NearestTenth = 12,
+    UpToHundredth = 3, DownToHundredth = -3, NearestHundredth = 13,
+    UpToThousandth = 4, DownToThousandth = -4, NearestThousandth = 14,
+    UpToMinute = 100, DownToMinute = 101, NearestMinute = 102
+}
+
+/// <summary>What a timing point does with a read (<see cref="TimingPoint.Type"/>), as RaceResult's timing points page lists it.</summary>
+public enum TimingPointType
+{
+    /// <summary>"Sequentially: Fill Results Sequentially".</summary>
+    Sequential = 0,
+    /// <summary>"Sort: Pigeonhole Faster Times".</summary>
+    Sort = 1,
+    /// <summary>"Start: Overwrite Result".</summary>
+    Start = 2,
+    /// <summary>"In/Out: Overwrite Second Result".</summary>
+    InOut = 3,
+    /// <summary>"Default: Save raw data only".</summary>
+    Default = 9
+}
+
+/// <summary>A timing point's own choice for a main timing setting (<see cref="TimingPoint.SubtractT0"/>, <see cref="TimingPoint.IgnorePs"/>).</summary>
+public enum TimingPointOption
+{
+    /// <summary>"(According to Main Setting)".</summary>
+    MainSetting = 0,
+    Yes = 1,
+    No = 2
+}
+
+/// <summary>Which read a raw data rule takes for its result (<see cref="RawDataRule.Mode"/>), as RaceResult's raw data rules page lists them.</summary>
+public enum RawDataRuleMode
+{
+    Minimum = 0,
+    Maximum = 1,
+    /// <summary>"Nth": the <see cref="RawDataRule.N"/>th read.</summary>
+    Nth = 2,
+    Lap = 3,
+    FirstMarker = 4,
+    LastMarker = 5,
+    /// <summary>"Closest to" <see cref="RawDataRule.Ref"/>.</summary>
+    ClosestTo = 6,
+    HighestRssi = 7
+}
+
+/// <summary>How a team score combines its members' results (<see cref="TeamScore.ResultMode1"/> … 4), as RaceResult's team scores page lists them.</summary>
+public enum TeamScoreResultMode
+{
+    Sum = 0,
+    Minimum = 1,
+    Maximum = 2,
+    Average = 3,
+    Count = 4,
+    CrossCountry = 11
+}
+
+/// <summary><see cref="TeamScore.LapTimes"/>: lap times of a relay team.</summary>
+public enum TeamScoreLapTimes
+{
+    /// <summary>"No Lap Times".</summary>
+    None = 0,
+    /// <summary>"Lap Times; Detection before Transition Area".</summary>
+    DetectionBeforeTransition = 1,
+    /// <summary>"Lap Times; Detection after Transition Area".</summary>
+    DetectionAfterTransition = 2
+}
+
+/// <summary>An event's type of sport (<see cref="EventListItem.EventType"/>), as RaceResult's event settings list it.</summary>
+public enum EventType
+{
+    Running = 0, Inline = 1, MountainBike = 2, Skiing = 3, Swimming = 4, Triathlon = 5, Duathlon = 6,
+    Gigathlon = 7, Athletics = 8, Motorsports = 9, Other = 10, Cycling = 11, Aquathlon = 12, Bmx = 13,
+    WaterSkiing = 14, Wakeboard = 15, Rowing = 16, Biathlon = 17, SpeedSkating = 18, Sailing = 19,
+    Cyclocross = 20, Walking = 21, BikeTour = 22, WomensRun = 23, CrossCountrySkiing = 24,
+    SkiMountaineering = 25, SkyRun = 26, Equestrian = 27, Snowboard = 28, Canicross = 29,
+    TrailRunning = 30, Motocross = 31, SledDog = 33, ObstacleCourseRace = 34,
+    StandupPaddleboarding = 35, Kayak = 36, FitnessRace = 37
 }
 
 /// <summary><see cref="Contest.TimingMode"/>: whether the contest's results (and its splits) are gun or chip time.</summary>
@@ -735,7 +831,7 @@ public record EventListItem
     public string EventName { get; init; } = "";
     public RaceResultDateTime EventDate { get; init; }
     public RaceResultDateTime EventDate2 { get; init; }
-    public int EventType { get; init; }
+    public EventType EventType { get; init; }
     public string EventLocation { get; init; } = "";
     public int EventCountry { get; init; }
     public bool RegActive { get; init; }
@@ -753,7 +849,7 @@ public record LocalEventListItem
     public string FileName { get; init; } = "";
     public string EventName { get; init; } = "";
     public RaceResultDateTime EventDate { get; init; }
-    public int EventType { get; init; }
+    public EventType EventType { get; init; }
     public bool CheckedOut { get; init; }
     public int Participants { get; init; }
     public int NotActivated { get; init; }
@@ -872,15 +968,15 @@ public record BibRange
 public record TimingPoint
 {
     public string Name { get; init; } = "";
-    public int Type { get; init; }
+    public TimingPointType Type { get; init; }
     [JsonPropertyName("DDT")]
     public int Ddt { get; init; }
     public int IgnoreIfTimeIn { get; init; }
     public decimal IgnoreBefore { get; init; }
     public decimal IgnoreAfter { get; init; }
-    public int SubtractT0 { get; init; }
+    public TimingPointOption SubtractT0 { get; init; }
     [JsonPropertyName("IgnorePS")]
-    public int IgnorePs { get; init; }
+    public TimingPointOption IgnorePs { get; init; }
     public string Position { get; init; } = "";
     public int OrderPos { get; init; }
     public string Color { get; init; } = "";
@@ -920,10 +1016,10 @@ public record TeamScore
     public int ResultId3 { get; init; }
     [JsonPropertyName("ResultID4")]
     public int ResultId4 { get; init; }
-    public int ResultMode1 { get; init; }
-    public int ResultMode2 { get; init; }
-    public int ResultMode3 { get; init; }
-    public int ResultMode4 { get; init; }
+    public TeamScoreResultMode ResultMode1 { get; init; }
+    public TeamScoreResultMode ResultMode2 { get; init; }
+    public TeamScoreResultMode ResultMode3 { get; init; }
+    public TeamScoreResultMode ResultMode4 { get; init; }
     public bool SortDesc1 { get; init; }
     public bool SortDesc2 { get; init; }
     public bool SortDesc3 { get; init; }
@@ -935,7 +1031,7 @@ public record TeamScore
     public int MaxTeams { get; init; }
     public string Filter { get; init; } = "";
     public string TimeFormat { get; init; } = "";
-    public int LapTimes { get; init; }
+    public TeamScoreLapTimes LapTimes { get; init; }
     public bool LapTimesLemans { get; init; }
     public bool LapTimesZeroStart { get; init; }
     public string Name { get; init; } = "";

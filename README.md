@@ -244,14 +244,21 @@ Where a model field or a parameter is a choice among RaceResult's own numbers, t
 `enum`, not an `int`, so a caller keeps no RaceResult numbers of its own. Identifiers stay `int` — a
 PID, a bib, a contest, a result or a split `Id` is a number, not a choice. The values are
 RaceResult's go-model constants or what RaceResult's own pages write (checked against a splits
-definition, a registration's payment methods, a kiosk and an event site set up by hand and exported):
+definition, a registration's payment methods, a kiosk and an event site set up by hand and exported,
+and the option lists of RaceResult's own pages, a value with its label):
 
 | Enum | Field | Values |
 |---|---|---|
 | `SplitType` | `Split.SplitType` | `Split` 0, `Internal` 2, `Leg` 9 |
 | `SplitTimeMode` | `Split.TimeMode` (what `TimeMin`/`TimeMax` are) | `RaceTime` 0, `TimeOfDay` -1, `FromPreviousSplit` -2, `MinPerKm` -3, `MinPerMile` -4, `MinPer100m` -5, `Kmh` -6, `Mph` -7, `MetresPerSecond` -8 |
 | `SplitDistanceFrom` | `Split.DistanceFrom` | `Start` 0, `PreviousSplit` -1, or `SplitDistanceFromExtensions.FromSplit(id)` |
-| `TypeOfSport` | `Split.TypeOfSport` | `None` 0, `Swimming` 4, `Skiing` 5, `Other` 10, `Cycling` 11, `Running` 100, `TransitionFirstRead` 250, `TransitionLastRead` 251 |
+| `TypeOfSport` | `Split.TypeOfSport` | `None` 0, `Swimming` 4, `Skiing` 5, `Other` 10, `Cycling` 11, `Running` 100, `TransitionFirstRead` 250, `TransitionLastRead` 251, `StartFirstRead` 253, `StartCheck` 254, `StartLastRead` 255 |
+| `TimeRounding` | `Contest.TimeRounding`, `Result.TimeRounding` | `None` 0, up/down/nearest to second (1/-1/11), tenth (2/-2/12), hundredth (3/-3/13), thousandth (4/-4/14), minute (100/101/102) |
+| `TimingPointType` | `TimingPoint.Type` | `Sequential` 0, `Sort` 1, `Start` 2, `InOut` 3, `Default` 9 |
+| `TimingPointOption` | `TimingPoint.SubtractT0`, `.IgnorePs` | `MainSetting` 0, `Yes` 1, `No` 2 |
+| `RawDataRuleMode` | `RawDataRule.Mode` | `Minimum` 0, `Maximum` 1, `Nth` 2, `Lap` 3, `FirstMarker` 4, `LastMarker` 5, `ClosestTo` 6, `HighestRssi` 7 |
+| `TeamScoreResultMode` / `TeamScoreLapTimes` | `TeamScore.ResultMode1`…`4` / `.LapTimes` | `Sum` 0, `Minimum` 1, `Maximum` 2, `Average` 3, `Count` 4, `CrossCountry` 11 / `None` 0, `DetectionBeforeTransition` 1, `DetectionAfterTransition` 2 |
+| `EventType` | `EventListItem.EventType`, `LocalEventListItem.EventType` | `Running` 0 … `FitnessRace` 37, as the event settings list them |
 | `ContestTimingMode` | `Contest.TimingMode` | `GunTime` 0, `ChipTime` 1 |
 | `ParticipantStatus` | `Participant.Status` | `Regular` 0, `OutOfCompetition` 1, `Disqualified` 2, `DidNotFinish` 3, `DidNotStart` 4, `NotPresent` 5 |
 | `CustomFieldType` | `CustomField.FieldType` | `Text` 0 … `Transponder` 10, `Time` 11 |
@@ -268,8 +275,10 @@ definition, a registration's payment methods, a kiosk and an event site set up b
 | `PayState` | `PayPayment.PayState` | `Undefined` 0, `Pending` 1, `Underpaid` 2, `Paid` 3, `Overpaid` 4, `NoPayout` 5 |
 
 The design enums (`PageSize`, `PageFormat`, `CertificateElementType`, `LabelAlignment`,
-`ListShowAt`, `ListPageBreak`, `EmailTemplateType`, `CertificateSetType`, …) cover the same ground
-for the design objects.
+`ListShowAt`, `ListPageBreak`, `ListGrouping`, `ListGroupFilterDefault`, `ListResponsiveHide`,
+`CertificateHoles`, `CertificateChipType`, `CertificateMachine`, `EmailTemplateType`,
+`CertificateSetType`, `RegistrationShowIfMode`, `RegistrationDefaultValueType`, `PresenterScrollBar`, …)
+cover the same ground for the design objects.
 
 Where RaceResult stores a choice as text, the field is a string-backed value type: the known values
 are static members (`SplitDistanceUnit.Kilometers`), a string converts implicitly
