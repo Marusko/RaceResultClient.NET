@@ -92,10 +92,10 @@ public sealed class EventApiClient
 
     /// <summary>
     /// <c>check</c>: what RaceResult's web UI calls periodically while an event is open; it appears to
-    /// keep the session alive. Not in go-webapi. Returns the response as text.
+    /// keep the session alive. Not in go-webapi. RaceResult answers <c>1</c>; the number is returned as is.
     /// </summary>
-    public Task<string> CheckAsync(string lang = "", CancellationToken ct = default)
-        => Client.GetAsync<string>(EventId, "check", new QueryParams().Add("lang", lang), ct);
+    public Task<int> CheckAsync(string lang = "", CancellationToken ct = default)
+        => Client.GetAsync<int>(EventId, "check", new QueryParams().Add("lang", lang), ct);
 
     // ── Internal helpers used by endpoint classes ─────────────────────────────
 

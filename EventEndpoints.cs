@@ -556,6 +556,14 @@ public sealed class SettingsEndpoints(EventApiClient e)
         => e.GetVoidAsync("settings/delete",
             new QueryParams().Add("name", name).Add("contest", contest).Add("result", result), ct);
 
+    /// <summary>The event's invoice settings, read from its <c>Invoice…</c> settings (not in go-webapi).</summary>
+    public async Task<InvoiceSettings> GetInvoiceSettingsAsync(CancellationToken ct = default)
+        => InvoiceSettings.FromSettings(await GetAsync(ct, InvoiceSettings.SettingNames));
+
+    /// <summary>Saves the event's invoice settings as its <c>Invoice…</c> settings (not in go-webapi).</summary>
+    public Task SaveInvoiceSettingsAsync(InvoiceSettings settings, CancellationToken ct = default)
+        => SaveAsync(settings.ToSettings(), ct);
+
     /// <summary>Returns the names of settings matching the given prefix.</summary>
     public Task<string[]> NamesByPrefixAsync(string prefix, CancellationToken ct = default)
         => e.GetAsync<string[]>("settings/settingnamesbyprefix",

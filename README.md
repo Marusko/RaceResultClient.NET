@@ -237,7 +237,7 @@ Where a model field or a parameter is a choice among RaceResult's own numbers, t
 `enum`, not an `int`, so a caller keeps no RaceResult numbers of its own. Identifiers stay `int` — a
 PID, a bib, a contest, a result or a split `Id` is a number, not a choice. The values are
 RaceResult's go-model constants or what RaceResult's own pages write (checked against a splits
-definition and a registration's payment methods set up by hand and exported):
+definition, a registration's payment methods, a kiosk and an event site set up by hand and exported):
 
 | Enum | Field | Values |
 |---|---|---|
@@ -253,6 +253,9 @@ definition and a registration's payment methods set up by hand and exported):
 | `TriggerType` | `TriggerSettings.TriggerType` | `NewTime` 0 … `NewRawDataV2` 10 |
 | `StatisticAggregation` | `Statistics.Aggregation`, `Statistics.ComputeAsync`, `Data.TransformationAsync` | `Count` 1, `Minimum` 2, `Maximum` 3, `Mean` 4, `Sum` 5 |
 | `CertificateAlignment` / `CertificateVAlignment` | `CertificateElement.Alignment` / `.VAlignment` | `Left` 1, `Center` 2, `Right` 3 / `Top` 0, `Middle` 1, `Bottom` 2 |
+| `KioskTransponderMode` | `Kiosk.TransponderMode` | `ErrorOnMultipleAssignment` 0, `DeleteExistingAssignment` 1, `MultipleAssignmentAllowed` 2 |
+| `KioskAcceptedTransponders` | `Kiosk.AcceptedTransponders` | `Any` 0, `OnlyInChipFile` 1 |
+| `WebsiteAlignment` | `Alignment` of the site's text, picture, field and compact-row elements | `None` 0, `Left` 1, `Center` 2, `Right` 3 |
 | `WebsiteRegIfLoggedIn` | `WebsiteRegConfig.IfLoggedIn`, `WebsiteRegistration.IfLoggedIn` | `Always` 0, `IfLoggedIn` 1, `IfNotLoggedIn` 2 |
 | `PaymentMethod` | `RegistrationPaymentMethod.Id`, `InvoicePaymentTerms.Method`, `PayPayment.Method`, `PayMethod.Id`, … | `NoPayment` 0, `CreditCardEur` 2, `MoneyTransferEuropean` 4, `CashAtEvent` 5, `PayPalEur` 7, `SepaDirectDebit` 16, … `OwnStripe` 31, … `OwnTazaPay` 42, named as RaceResult's registration settings list them |
 | `PayState` | `PayPayment.PayState` | `Undefined` 0, `Pending` 1, `Underpaid` 2, `Paid` 3, `Overpaid` 4, `NoPayout` 5 |
@@ -339,9 +342,10 @@ JSON) does not have to write them itself:
 | `PayPayment`, `PayRegistration`, `PayMethod`, `PayCreateRequest`, `PayCaptureResponse`, … | RACE RESULT's online payment service (go-model's `pay`) |
 
 A tab's or element's `Config` is the raw `JsonElement`; deserialize it into the record its `Type`
-names (`tab.Config?.Deserialize<WebsiteTabListsConfig>()`). `InvoiceSettings` is assembled from the
-event's `Invoice…` settings (`InvoiceNumberScheme`, `InvoiceIssuerCompany`, …), readable with
-`ev.Settings.GetAsync`. go-model's helpers are ported with them:
+names (`tab.Config?.Deserialize<WebsiteTabListsConfig>()`). `InvoiceSettings` is stored as the
+event's `Invoice…` settings (`InvoiceNumberScheme`, `InvoiceIssuerCompany`, …, `InvoiceExcludedEntryFees`
+as `"1,2"`); `ev.Settings.GetInvoiceSettingsAsync()` and `SaveInvoiceSettingsAsync(settings)` read and
+save them (not in go-webapi; `InvoiceSettings.FromSettings` / `ToSettings` convert). go-model's helpers are ported with them:
 `WebsiteTab.IsVisibleInMenu(t)` / `IsWithinActiveTimeFrame(t)`, `Certificate.PageCount()`,
 `GetWidth()`, `GetHeight()`, `GetHoles()`, `CertificatePageSize.Width()` / `Height()` and
 `PageSize.ToMm(landscape)`.
@@ -398,8 +402,8 @@ byte[] posted = await ev.PostRawAsync("some/undocumented/endpoint", new { Name =
 Dictionary<string, JsonElement> many = await ev.MultiRequestAsync(requests);
 
 // What RaceResult's web UI calls periodically while an event is open (not in go-webapi);
-// it appears to keep the session alive. The response comes back as text.
-string check = await ev.CheckAsync(lang: "en");
+// it appears to keep the session alive. RaceResult answers 1.
+int check = await ev.CheckAsync(lang: "en");
 ```
 
 ---

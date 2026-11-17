@@ -102,10 +102,9 @@ public record InvoiceWithDetails : Invoice
 
 /// <summary>
 /// How an event makes its invoices (go-model's <c>invoice.Settings</c>; RaceResult's invoice settings).
-/// The event stores them as separate settings named <c>Invoice…</c>: <c>InvoiceNumberScheme</c>,
-/// <c>InvoiceIssuerCompany</c> … <c>InvoiceIssuerVATID</c>, <c>InvoiceReceiverFieldCompany</c> …,
-/// <c>InvoicePaymentTermsIBAN</c> …, <c>InvoicePaymentTermsDueDays</c>, <c>InvoicePaymentTerms</c>
-/// (the terms' text) and <c>InvoiceExcludedEntryFees</c> (text).
+/// The event stores them as separate settings named <c>Invoice…</c>; <see cref="FromSettings"/> and
+/// <see cref="ToSettings"/> convert, and <see cref="SettingsEndpoints.GetInvoiceSettingsAsync"/> /
+/// <see cref="SettingsEndpoints.SaveInvoiceSettingsAsync"/> read and save them.
 /// </summary>
 public record InvoiceSettings
 {
@@ -146,6 +145,143 @@ public record InvoiceSettings
     public InvoicePaymentTerms PaymentTerms { get; init; } = new();
     /// <summary>"Exclude Entry Fees": the IDs of entry fees left off invoices.</summary>
     public int[]? ExcludedEntryFees { get; init; }
+
+    // ── the event's Invoice… settings ────────────────────────────────────────
+
+    /// <summary>The names of the event settings that hold these settings.</summary>
+    public static readonly string[] SettingNames =
+    [
+        "InvoiceNumberScheme", "InvoiceEInvoice", "InvoicePerformanceDate", "InvoiceLegalNotes",
+        "InvoiceReceiverFilter", "InvoiceReceiverMergeField",
+        "InvoiceIssuerCompany", "InvoiceIssuerName", "InvoiceIssuerAddressLine1", "InvoiceIssuerAddressLine2",
+        "InvoiceIssuerCity", "InvoiceIssuerZIP", "InvoiceIssuerState", "InvoiceIssuerCountry",
+        "InvoiceIssuerTaxID", "InvoiceIssuerVATID",
+        "InvoiceReceiverFieldCompany", "InvoiceReceiverFieldName", "InvoiceReceiverFieldAddressLine1",
+        "InvoiceReceiverFieldAddressLine2", "InvoiceReceiverFieldCity", "InvoiceReceiverFieldZIP",
+        "InvoiceReceiverFieldState", "InvoiceReceiverFieldCountry", "InvoiceReceiverFieldTaxID",
+        "InvoiceReceiverFieldVATID", "InvoiceReceiverFieldReference",
+        "InvoicePaymentTermsAccountOwner", "InvoicePaymentTermsIBAN", "InvoicePaymentTermsBIC",
+        "InvoicePaymentTermsAccountNo", "InvoicePaymentTermsBranchNo", "InvoicePaymentTermsBankName",
+        "InvoicePaymentTermsDueDays", "InvoicePaymentTerms", "InvoiceExcludedEntryFees"
+    ];
+
+    /// <summary>
+    /// Reads the event's <c>Invoice…</c> settings (as <c>settings/getsettings</c> returns them for
+    /// <see cref="SettingNames"/>). A missing setting reads as empty; <c>InvoiceExcludedEntryFees</c> is
+    /// the IDs as text (<c>"1,2"</c>).
+    /// </summary>
+    public static InvoiceSettings FromSettings(IReadOnlyDictionary<string, JsonElement> settings)
+    {
+        string Str(string name) => settings.TryGetValue(name, out var v)
+            ? v.ValueKind switch
+            {
+                JsonValueKind.String => v.GetString() ?? "",
+                JsonValueKind.Number => v.GetRawText(),
+                _ => ""
+            }
+            : "";
+        int Int(string name) => int.TryParse(Str(name), System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 0;
+
+        return new InvoiceSettings
+        {
+            NumberScheme = Str("InvoiceNumberScheme"),
+            EInvoice = Str("InvoiceEInvoice"),
+            PerformanceDate = RaceResultDate.TryParse(Str("InvoicePerformanceDate"), out var d) ? d : default,
+            LegalNotes = Str("InvoiceLegalNotes"),
+            ReceiverFilter = Str("InvoiceReceiverFilter"),
+            ReceiverMergeField = Str("InvoiceReceiverMergeField"),
+            Issuer = new InvoiceParty
+            {
+                Company = Str("InvoiceIssuerCompany"),
+                Name = Str("InvoiceIssuerName"),
+                AddressLine1 = Str("InvoiceIssuerAddressLine1"),
+                AddressLine2 = Str("InvoiceIssuerAddressLine2"),
+                City = Str("InvoiceIssuerCity"),
+                Zip = Str("InvoiceIssuerZIP"),
+                State = Str("InvoiceIssuerState"),
+                Country = Int("InvoiceIssuerCountry"),
+                TaxId = Str("InvoiceIssuerTaxID"),
+                VatId = Str("InvoiceIssuerVATID"),
+            },
+            ReceiverFieldCompany = Str("InvoiceReceiverFieldCompany"),
+            ReceiverFieldName = Str("InvoiceReceiverFieldName"),
+            ReceiverFieldAddressLine1 = Str("InvoiceReceiverFieldAddressLine1"),
+            ReceiverFieldAddressLine2 = Str("InvoiceReceiverFieldAddressLine2"),
+            ReceiverFieldCity = Str("InvoiceReceiverFieldCity"),
+            ReceiverFieldZip = Str("InvoiceReceiverFieldZIP"),
+            ReceiverFieldState = Str("InvoiceReceiverFieldState"),
+            ReceiverFieldCountry = Str("InvoiceReceiverFieldCountry"),
+            ReceiverFieldTaxId = Str("InvoiceReceiverFieldTaxID"),
+            ReceiverFieldVatId = Str("InvoiceReceiverFieldVATID"),
+            ReceiverFieldReference = Str("InvoiceReceiverFieldReference"),
+            PaymentTerms = new InvoicePaymentTerms
+            {
+                AccountOwner = Str("InvoicePaymentTermsAccountOwner"),
+                Iban = Str("InvoicePaymentTermsIBAN"),
+                Bic = Str("InvoicePaymentTermsBIC"),
+                AccountNo = Str("InvoicePaymentTermsAccountNo"),
+                BranchNo = Str("InvoicePaymentTermsBranchNo"),
+                BankName = Str("InvoicePaymentTermsBankName"),
+                DueDays = Int("InvoicePaymentTermsDueDays"),
+                Terms = Str("InvoicePaymentTerms"),
+            },
+            ExcludedEntryFees = Str("InvoiceExcludedEntryFees")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(x => int.TryParse(x, out var id) ? id : (int?)null)
+                .OfType<int>()
+                .ToArray(),
+        };
+    }
+
+    /// <summary>
+    /// These settings as the event's <c>Invoice…</c> settings, typed as RaceResult stores them (the issuer's
+    /// country and the due days as numbers, the rest as text). <see cref="PaymentTerms"/>' <c>Method</c>,
+    /// <c>MandateId</c> and <c>Reference</c> have no event setting and are left out.
+    /// </summary>
+    public Setting[] ToSettings()
+    {
+        Setting S(string name, object value) => new() { Name = name, Value = value };
+        return
+        [
+            S("InvoiceNumberScheme", NumberScheme),
+            S("InvoiceEInvoice", EInvoice),
+            S("InvoicePerformanceDate", PerformanceDate.ToString()),
+            S("InvoiceLegalNotes", LegalNotes),
+            S("InvoiceReceiverFilter", ReceiverFilter),
+            S("InvoiceReceiverMergeField", ReceiverMergeField),
+            S("InvoiceIssuerCompany", Issuer.Company),
+            S("InvoiceIssuerName", Issuer.Name),
+            S("InvoiceIssuerAddressLine1", Issuer.AddressLine1),
+            S("InvoiceIssuerAddressLine2", Issuer.AddressLine2),
+            S("InvoiceIssuerCity", Issuer.City),
+            S("InvoiceIssuerZIP", Issuer.Zip),
+            S("InvoiceIssuerState", Issuer.State),
+            S("InvoiceIssuerCountry", Issuer.Country),
+            S("InvoiceIssuerTaxID", Issuer.TaxId),
+            S("InvoiceIssuerVATID", Issuer.VatId),
+            S("InvoiceReceiverFieldCompany", ReceiverFieldCompany),
+            S("InvoiceReceiverFieldName", ReceiverFieldName),
+            S("InvoiceReceiverFieldAddressLine1", ReceiverFieldAddressLine1),
+            S("InvoiceReceiverFieldAddressLine2", ReceiverFieldAddressLine2),
+            S("InvoiceReceiverFieldCity", ReceiverFieldCity),
+            S("InvoiceReceiverFieldZIP", ReceiverFieldZip),
+            S("InvoiceReceiverFieldState", ReceiverFieldState),
+            S("InvoiceReceiverFieldCountry", ReceiverFieldCountry),
+            S("InvoiceReceiverFieldTaxID", ReceiverFieldTaxId),
+            S("InvoiceReceiverFieldVATID", ReceiverFieldVatId),
+            S("InvoiceReceiverFieldReference", ReceiverFieldReference),
+            S("InvoicePaymentTermsAccountOwner", PaymentTerms.AccountOwner),
+            S("InvoicePaymentTermsIBAN", PaymentTerms.Iban),
+            S("InvoicePaymentTermsBIC", PaymentTerms.Bic),
+            S("InvoicePaymentTermsAccountNo", PaymentTerms.AccountNo),
+            S("InvoicePaymentTermsBranchNo", PaymentTerms.BranchNo),
+            S("InvoicePaymentTermsBankName", PaymentTerms.BankName),
+            S("InvoicePaymentTermsDueDays", PaymentTerms.DueDays),
+            S("InvoicePaymentTerms", PaymentTerms.Terms),
+            S("InvoiceExcludedEntryFees", string.Join(",", ExcludedEntryFees ?? [])),
+        ];
+    }
 }
 
 /// <summary>go-model's <c>invoice.Filter</c>.</summary>

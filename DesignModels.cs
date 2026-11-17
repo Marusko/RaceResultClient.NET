@@ -562,6 +562,26 @@ public record ListSelectorResult([property: JsonPropertyName("ResultID")] int Re
 
 // ── kiosk ─────────────────────────────────────────────────────────────────────
 
+/// <summary><see cref="Kiosk.TransponderMode"/>: what a kiosk does with a transponder already assigned to another participant.</summary>
+public enum KioskTransponderMode
+{
+    /// <summary>"Error on multiple assignment".</summary>
+    ErrorOnMultipleAssignment = 0,
+    /// <summary>"Delete existing assignment".</summary>
+    DeleteExistingAssignment = 1,
+    /// <summary>"Multiple Assignment allowed".</summary>
+    MultipleAssignmentAllowed = 2
+}
+
+/// <summary><see cref="Kiosk.AcceptedTransponders"/>: the kiosk's "Accepted Transponder-Codes".</summary>
+public enum KioskAcceptedTransponders
+{
+    /// <summary>"Any".</summary>
+    Any = 0,
+    /// <summary>"Only Transponder Codes in Chip-File".</summary>
+    OnlyInChipFile = 1
+}
+
 public record Kiosk
 {
     public string Name { get; init; } = "";
@@ -569,8 +589,8 @@ public record Kiosk
     public bool Enabled { get; init; }
     public RaceResultDateTime EnabledFrom { get; init; }
     public RaceResultDateTime EnabledTo { get; init; }
-    public int TransponderMode { get; init; }
-    public int AcceptedTransponders { get; init; }
+    public KioskTransponderMode TransponderMode { get; init; }
+    public KioskAcceptedTransponders AcceptedTransponders { get; init; }
     public bool IgnoreBibRanges { get; init; }
     public bool AutoFinish { get; init; }
     [JsonPropertyName("CSS")]

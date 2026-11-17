@@ -384,19 +384,26 @@ public record WebsiteConfigLink
 /// <summary>A favorites tab's <see cref="WebsiteTab.Config"/>.</summary>
 public record WebsiteTabFavoritesConfig
 {
+    /// <summary>"Linked Participantview": the <see cref="WebsiteTab.UrlName"/> of a participant-view tab.</summary>
     [JsonPropertyName("Participantview")]
     public string ParticipantView { get; init; } = "";
     public WebsiteSearchConfig Search { get; init; } = new();
+    /// <summary>"Search Result Visualisation": the elements of each search result.</summary>
     public WebsiteElement[]? SearchResultElements { get; init; }
+    /// <summary>"Favorite List Visualisation": the elements of each favorite.</summary>
     public WebsiteElement[]? FavoriteElements { get; init; }
+    /// <summary>The favorite list's "Order by Field".</summary>
     public string ListSortedField { get; init; } = "";
     public bool ListSortAsc { get; init; }
+    /// <summary>Written by RaceResult's site editor; not in go-model.</summary>
+    public string ParticipantColorRule { get; init; } = "";
 }
 
 public record WebsiteSearchConfig
 {
     public string Filter { get; init; } = "";
     public string[]? Fields { get; init; }
+    /// <summary>The search results' "Order by Field".</summary>
     public string SortedField { get; init; } = "";
     public bool SortAsc { get; init; }
 }
@@ -500,8 +507,10 @@ public readonly struct WebsiteElementType(string value) : IStringValue<WebsiteEl
     public static readonly WebsiteElementType Text = new("text");
     public static readonly WebsiteElementType Html = new("html");
     public static readonly WebsiteElementType Picture = new("picture");
+    /// <summary>"Fixed Columns" in the site editor.</summary>
     public static readonly WebsiteElementType Columns = new("columns");
     public static readonly WebsiteElementType Flexbox = new("flexbox");
+    /// <summary>"Field/Expression" in the site editor.</summary>
     public static readonly WebsiteElementType Field = new("field");
     public static readonly WebsiteElementType Box = new("box");
     public static readonly WebsiteElementType Tabs = new("tabs");
@@ -512,6 +521,7 @@ public readonly struct WebsiteElementType(string value) : IStringValue<WebsiteEl
     public static readonly WebsiteElementType Photos = new("photos");
     public static readonly WebsiteElementType Certificates = new("certificates");
     public static readonly WebsiteElementType Chart = new("chart");
+    /// <summary>"Compact Row" in the site editor.</summary>
     public static readonly WebsiteElementType InlineBlock = new("inlineblock");
     public static readonly WebsiteElementType Map = new("map");
     /// <summary>Legacy.</summary>
@@ -563,10 +573,23 @@ public record WebsiteElementBoxConfig
     public string TitleDynamicFormat { get; init; } = "";
 }
 
+/// <summary>
+/// An element's horizontal alignment (the site editor's "Alignment" buttons), on text, picture,
+/// field and compact-row elements.
+/// </summary>
+public enum WebsiteAlignment
+{
+    /// <summary>Not set (the element's config has no alignment).</summary>
+    None = 0,
+    Left = 1,
+    Center = 2,
+    Right = 3
+}
+
 public record WebsiteElementTextConfig
 {
     public string Text { get; init; } = "";
-    public int Alignment { get; init; }
+    public WebsiteAlignment Alignment { get; init; }
 }
 
 public record WebsiteElementHtmlConfig
@@ -577,7 +600,7 @@ public record WebsiteElementHtmlConfig
 public record WebsiteElementPictureConfig
 {
     public string Src { get; init; } = "";
-    public int Alignment { get; init; }
+    public WebsiteAlignment Alignment { get; init; }
 }
 
 public record WebsiteElementFieldConfig
@@ -588,7 +611,7 @@ public record WebsiteElementFieldConfig
     /// <summary>For <see cref="WebsiteFieldDisplayMode.TitleAbove"/>.</summary>
     public WebsiteStyle[]? TitleStyles { get; init; }
     public string TitleDynamicFormat { get; init; } = "";
-    public int Alignment { get; init; }
+    public WebsiteAlignment Alignment { get; init; }
 }
 
 /// <summary><see cref="WebsiteElementFieldConfig.DisplayMode"/>'s values.</summary>
@@ -668,7 +691,7 @@ public record WebsiteElementListConfig
 
 public record WebsiteElementInlineBlockConfig
 {
-    public int Alignment { get; init; }
+    public WebsiteAlignment Alignment { get; init; }
 }
 
 public record WebsiteElementChartConfig
