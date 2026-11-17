@@ -37,8 +37,15 @@ except the certificate page-size/format enums which serialize as strings.
 Property names follow C# conventions (`Id`, `Url`, `Rssi`), but every property whose Go JSON name
 differs carries a `[JsonPropertyName]` attribute (`ID`, `URL`, `RSSI`, …), so the JSON names on the
 wire are the ones go-webapi sends and expects. The JSON is not byte-for-byte Go's, though: a `null`
-property is left out where Go writes `null`, and `time.Time` fields (`DateTime` here) are written by
-`System.Text.Json` (go-model's own date types are written as Go writes them, see [Dates](#dates)).
+property is left out where Go writes `null`, and a `DateTime` (Go's `time.Time`) carries up to seven
+fractional digits where Go writes nine (go-model's own date types are written as Go writes them, see
+[Dates](#dates)).
+
+Two of RaceResult's own rules shape the JSON too. A `DateTime` always goes out with a zone, as Go's
+`time.Time` needs: one of `DateTimeKind.Unspecified` — an unset `Passing.Received` among them — is
+sent as UTC, else `times/add` refuses the whole request. And `+` and non-ASCII text are written as
+they are, not `\u002B`: RaceResult tells a date-time string's format by its length in bytes, so
+`"…+01:00"` escaped is "date time format not supported" (Registration and Kiosk `EnabledTo`).
 
 ---
 

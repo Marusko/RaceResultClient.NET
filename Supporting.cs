@@ -95,11 +95,37 @@ internal static class JsonOptions
     // (encoding/json marshals integer enum types as their underlying int value).
     // The only string-serialized enums in the Go model (certificate.PageSize /
     // certificate.PageFormat) are individually annotated with a string converter.
+    //
+    // RaceResult reads some values off the raw JSON bytes rather than the decoded string:
+    // go-model's datetime.DateTime (Registration/Kiosk EnabledFrom, …) tells its format by the
+    // byte length of the quoted text, so "+01:00" written as "\u002B01:00" is "not supported".
+    // The relaxed encoder writes '+' (and non-ASCII text) as is, as Go's encoding/json does.
     public static readonly JsonSerializerOptions Default = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new GoTimeConverter() }
     };
+}
+
+/// <summary>
+/// A <see cref="DateTime"/> the way Go's <c>time.Time</c> reads it: RFC 3339, always with a zone.
+/// .NET writes a <see cref="DateTimeKind.Unspecified"/> value — <c>default(DateTime)</c> among them —
+/// without one ("0001-01-01T00:00:00"), which RaceResult refuses for the whole request; such a value
+/// is written as UTC, as Go writes its zero time ("0001-01-01T00:00:00Z").
+/// </summary>
+internal sealed class GoTimeConverter : JsonConverter<DateTime>
+{
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => reader.GetDateTime();
+
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+    {
+        if (value.Kind == DateTimeKind.Unspecified)
+            value = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        writer.WriteStringValue(value.ToString("yyyy-MM-dd'T'HH:mm:ss.FFFFFFFK", CultureInfo.InvariantCulture));
+    }
 }
 
 // ── Participant identifier (Bib vs PID) ───────────────────────────────────────
