@@ -1,0 +1,84 @@
+[
+  {
+    "ID": 4,
+    "PID": 13,
+    "TimingPoint": "",
+    "Result": -9,
+    "Time": 0,
+    "Invalid": false,
+    "Passing": {
+      "Transponder": "ZZTEST1",
+      "Position": {
+        "Latitude": 0,
+        "Longitude": 0,
+        "Altitude": 0,
+        "Flag": ""
+      },
+      "Hits": 0,
+      "RSSI": 0,
+      "Battery": 0,
+      "Temperature": 0,
+      "WUC": 0,
+      "LoopID": 0,
+      "Channel": 0,
+      "InternalData": "",
+      "StatusFlags": 0,
+      "DeviceID": "",
+      "DeviceName": "Reader",
+      "OrderID": 0,
+      "Port": 0,
+      "IsMarker": false,
+      "FileNo": 0,
+      "PassingNo": 0,
+      "Customer": 0,
+      "Received": "0001-01-01T00:00:00Z",
+      "UTCTime": "2026-11-17T16:30:15.3342551Z"
+    },
+    "Bib": 50001,
+    "Fields": {
+      "Bib": 50001,
+      "Lastname": "50001"
+    }
+  },
+  {
+    "ID": 1,
+    "PID": 2,
+    "TimingPoint": "STARTFINISH",
+    "Result": -255,
+    "Time": 43200,
+    "Invalid": false,
+    "Passing": {
+      "Transponder": "",
+      "Position": {
+        "Latitude": 0,
+        "Longitude": 0,
+        "Altitude": 0,
+        "Flag": ""
+      },
+      "Hits": 0,
+      "RSSI": 0,
+      "Battery": 0,
+      "Temperature": 0,
+      "WUC": 0,
+      "LoopID": 0,
+      "Channel": 0,
+      "InternalData": "",
+      "StatusFlags": 0,
+      "DeviceID": "Manual",
+      "DeviceName": "",
+      "OrderID": 0,
+      "Port": 0,
+      "IsMarker": false,
+      "FileNo": 0,
+      "PassingNo": 0,
+      "Customer": 0,
+      "Received": "0001-01-01T00:00:00Z",
+      "UTCTime": "0001-01-01T00:00:00Z"
+    },
+    "Bib": 500,
+    "Fields": {
+      "Bib": 500,
+      "Lastname": "Test-qmriymh01"
+    }
+  }
+]

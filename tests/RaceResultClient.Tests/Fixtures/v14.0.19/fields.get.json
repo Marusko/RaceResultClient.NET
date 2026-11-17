@@ -1,0 +1,18 @@
+[
+  {
+    "ID": 1001,
+    "Name": "TShirt",
+    "AltName": "",
+    "Group": "",
+    "Type": 1,
+    "Enabled": true,
+    "Mandatory": false,
+    "Config": ";S;M;L;XL",
+    "Default": "",
+    "Placeholder": "",
+    "Label": "TShirt",
+    "OrderPos": 100,
+    "MinLen": 0,
+    "MaxLen": 0
+  }
+]

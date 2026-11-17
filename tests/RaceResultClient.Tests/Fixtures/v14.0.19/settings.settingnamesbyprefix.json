@@ -1,0 +1,21 @@
+[
+  "Attributes",
+  "Country",
+  "Currency",
+  "Date",
+  "Date2",
+  "Location",
+  "LocationHash",
+  "LocationLat",
+  "LocationLng",
+  "Logo",
+  "md5",
+  "Name",
+  "Notes",
+  "State",
+  "Street",
+  "TimeZone",
+  "Type",
+  "Weather",
+  "ZIP"
+]

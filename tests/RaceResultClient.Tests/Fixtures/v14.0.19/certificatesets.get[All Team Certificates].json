@@ -1,0 +1,21 @@
+{
+  "Name": "All Team Certificates",
+  "CertificateName": "Team Certificate",
+  "CertificateSetType": 1,
+  "TeamScore": 1,
+  "FilterRankID": 0,
+  "FilterRankOperator": "",
+  "FilterRankCompare": 0,
+  "FilterAYN": 0,
+  "FilterOnlyFinishers": false,
+  "FilterGeneral": "",
+  "OnlyUnshownCertificates": false,
+  "Sort1": "Contest",
+  "Sort2": "TS1.RANK",
+  "Sort3": "",
+  "Sort4": "",
+  "SortDesc1": false,
+  "SortDesc2": false,
+  "SortDesc3": false,
+  "SortDesc4": false
+}

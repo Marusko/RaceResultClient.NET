@@ -1,0 +1,21 @@
+{
+  "Name": "Award Ceremony 1-3 M/F",
+  "CertificateName": "Certificate",
+  "CertificateSetType": 0,
+  "TeamScore": 0,
+  "FilterRankID": 2,
+  "FilterRankOperator": "<=",
+  "FilterRankCompare": 3,
+  "FilterAYN": 0,
+  "FilterOnlyFinishers": true,
+  "FilterGeneral": "",
+  "OnlyUnshownCertificates": false,
+  "Sort1": "CONTEST",
+  "Sort2": "SEX",
+  "Sort3": "RANK2",
+  "Sort4": "",
+  "SortDesc1": false,
+  "SortDesc2": false,
+  "SortDesc3": false,
+  "SortDesc4": false
+}

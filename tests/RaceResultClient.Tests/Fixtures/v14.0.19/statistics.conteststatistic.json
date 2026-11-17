@@ -1,0 +1,56 @@
+[
+  {
+    "ID": 0,
+    "Name": "",
+    "Male": 1,
+    "Female": 0,
+    "Adults": 0,
+    "Children": 1,
+    "MeanAge": 0,
+    "Finished": 0,
+    "Results": [
+      {
+        "ID": 0,
+        "Male": 0,
+        "Female": 0,
+        "isFormula": false
+      }
+    ]
+  },
+  {
+    "ID": 1,
+    "Name": "Contest 1",
+    "Male": 9,
+    "Female": 0,
+    "Adults": 9,
+    "Children": 0,
+    "MeanAge": 26,
+    "Finished": 1,
+    "Results": [
+      {
+        "ID": 0,
+        "Male": 1,
+        "Female": 0,
+        "isFormula": false
+      }
+    ]
+  },
+  {
+    "ID": 2,
+    "Name": "Contest 2",
+    "Male": 0,
+    "Female": 0,
+    "Adults": 0,
+    "Children": 0,
+    "MeanAge": 0,
+    "Finished": 0,
+    "Results": [
+      {
+        "ID": 0,
+        "Male": 0,
+        "Female": 0,
+        "isFormula": false
+      }
+    ]
+  }
+]

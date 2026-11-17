@@ -1,0 +1,44 @@
+[
+  {
+    "Name": "DisplayName",
+    "Expression": "[LASTNAME] & \", \" & trim([TITLE] & \" \" & [FIRSTNAME])",
+    "Note": "",
+    "Group": ""
+  },
+  {
+    "Name": "GenderMF",
+    "Expression": "translate([SEX];\"F\";\"M\";\"A\")",
+    "Note": "",
+    "Group": ""
+  },
+  {
+    "Name": "MaleFemale",
+    "Expression": "translate([SEX];\"Female\";\"Male\";\"Agender\")",
+    "Note": "",
+    "Group": ""
+  },
+  {
+    "Name": "WithStatus(x)",
+    "Expression": "choose([STATUS]+1;[x];\"a.k.\";\"DSQ\";\"DNF\";\"DNS\";\"n.a.\")",
+    "Note": "",
+    "Group": ""
+  },
+  {
+    "Name": "ClubOrCity",
+    "Expression": "switch([CLUB]<>\"\";[CLUB]; [CITY]<>\"\";\"(\" & [CITY] & \")\")",
+    "Note": "",
+    "Group": ""
+  },
+  {
+    "Name": "YesNo(x)",
+    "Expression": "if([x];\"Yes\";\"No\")",
+    "Note": "",
+    "Group": ""
+  },
+  {
+    "Name": "xIBAN",
+    "Expression": "\"XXXXXXXXXXXXXXXXXXXXXXXX\"",
+    "Note": "",
+    "Group": ""
+  }
+]

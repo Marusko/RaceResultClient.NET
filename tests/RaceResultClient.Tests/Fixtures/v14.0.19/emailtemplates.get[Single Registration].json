@@ -1,0 +1,21 @@
+{
+  "Name": "Single Registration",
+  "Type": 0,
+  "Sender": "noreply@raceresult.com",
+  "SenderName": "noreply@raceresult.com",
+  "ReplyTo": "",
+  "CC": "",
+  "BCC": "",
+  "ReceiverField": "",
+  "HTML": false,
+  "Method": "",
+  "Subject": "#Confirmation of Your Registration, [Event.Name]",
+  "Text": "#Hello [FLName]!\r\n\r\nYour registration for [Event.Name] has been transmitted. Please review the most important entries:\r\nLast Name: [LastName]\r\nFirst Name: [FirstName]\r\nYear of Birth: [Year]\r\nGender: [translate([Sex];\"female\";\"male\";\"agender\")]\r\nContest: [Contest.Name]\r\n\r\nYour Organization Team",
+  "Header": "",
+  "Footer": "",
+  "DefaultFilter": "",
+  "SetCustomFieldAfterSending": "",
+  "SaveResultIn": "",
+  "Attachments": null,
+  "HTTPHeaders": null
+}

@@ -1,0 +1,68 @@
+[
+  {
+    "ID": 1,
+    "Bib": 500,
+    "PartID": 2,
+    "DateTime": "2026-06-22T16:52:20.099+02:00",
+    "FieldName": "BIB",
+    "OldValue": 1,
+    "NewValue": 1001,
+    "User": "xxxxx",
+    "Application": "RRWS"
+  },
+  {
+    "ID": 2,
+    "Bib": 1002,
+    "PartID": 3,
+    "DateTime": "2026-06-22T16:52:24.412+02:00",
+    "FieldName": "BIB",
+    "OldValue": 2,
+    "NewValue": 1002,
+    "User": "xxxxx",
+    "Application": "RRWS"
+  },
+  {
+    "ID": 3,
+    "Bib": 1003,
+    "PartID": 4,
+    "DateTime": "2026-06-22T16:52:28.606+02:00",
+    "FieldName": "BIB",
+    "OldValue": 3,
+    "NewValue": 1003,
+    "User": "xxxxx",
+    "Application": "RRWS"
+  },
+  {
+    "ID": 4,
+    "Bib": 500,
+    "PartID": 2,
+    "DateTime": "2026-06-22T17:33:50.882+02:00",
+    "FieldName": "BIB",
+    "OldValue": 1001,
+    "NewValue": 1,
+    "User": "",
+    "Application": "RRWS"
+  },
+  {
+    "ID": 5,
+    "Bib": 500,
+    "PartID": 2,
+    "DateTime": "2026-06-22T20:34:30.817+02:00",
+    "FieldName": "BIB",
+    "OldValue": 1,
+    "NewValue": 1001,
+    "User": "xxxxx",
+    "Application": "RRWS"
+  },
+  {
+    "ID": 6,
+    "Bib": 500,
+    "PartID": 2,
+    "DateTime": "2026-06-22T20:35:32.512+02:00",
+    "FieldName": "BIB",
+    "OldValue": 1001,
+    "NewValue": 500,
+    "User": "xxxxx",
+    "Application": "RRWS"
+  }
+]

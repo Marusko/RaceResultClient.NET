@@ -1,0 +1,13 @@
+{
+  "500": [
+    {
+      "ID": 1,
+      "Name": "Basic Fee",
+      "Fee": 10,
+      "Field": "",
+      "Tax": 0,
+      "Multiplication": 0,
+      "ContestID": 1
+    }
+  ]
+}

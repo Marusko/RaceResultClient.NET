@@ -1,0 +1,21 @@
+{
+  "Name": "Certificate Web",
+  "CertificateName": "Certificate + Background",
+  "CertificateSetType": 0,
+  "TeamScore": 0,
+  "FilterRankID": 0,
+  "FilterRankOperator": "",
+  "FilterRankCompare": 0,
+  "FilterAYN": 0,
+  "FilterOnlyFinishers": true,
+  "FilterGeneral": "",
+  "OnlyUnshownCertificates": false,
+  "Sort1": "BIB",
+  "Sort2": "",
+  "Sort3": "",
+  "Sort4": "",
+  "SortDesc1": false,
+  "SortDesc2": false,
+  "SortDesc3": false,
+  "SortDesc4": false
+}

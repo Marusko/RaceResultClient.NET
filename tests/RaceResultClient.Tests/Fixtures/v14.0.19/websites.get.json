@@ -1,0 +1,325 @@
+{
+  "Label": "default",
+  "Publish": false,
+  "CoverPicture": "",
+  "CoverPictureMobile": "",
+  "HideEventLogo": false,
+  "AdditionalCode": "",
+  "AdditionalFeatures": [],
+  "BrandColorDark": "",
+  "ApplyContestColor": "",
+  "PortalTestKey": "8YDcD3WSWZxr1FXyt6cB4aoFheb6QfwZ",
+  "Organizer": {
+    "Name": "Please enter the organizer's name and address",
+    "Mail": "Please enter the organizer's email",
+    "Web": "Please enter the organizer's website",
+    "Picture": "",
+    "DataProtection": ""
+  },
+  "Timer": {
+    "Name": "",
+    "Mail": "",
+    "Web": "",
+    "Picture": "",
+    "DataProtection": ""
+  },
+  "PayProc": {
+    "Name": "",
+    "Mail": "",
+    "Web": "",
+    "Picture": "",
+    "DataProtection": ""
+  },
+  "Tabs": [
+    {
+      "Label": "",
+      "URLName": "info",
+      "Enabled": false,
+      "ShowInMenu": false,
+      "ShowInMenu2": "always",
+      "ActiveFrom": "1900-01-01",
+      "ActiveUntil": "2100-12-31 23:59:59",
+      "Type": "text",
+      "Config": {
+        "InfoText": "",
+        "ShowEventGroups": true
+      }
+    },
+    {
+      "Label": "",
+      "URLName": "registration",
+      "Enabled": true,
+      "ShowInMenu": false,
+      "ShowInMenu2": "never",
+      "ActiveFrom": "2001-01-01",
+      "ActiveUntil": "2100-12-31 23:59:59",
+      "Type": "registration",
+      "Config": {
+        "InfoText": "",
+        "RegTestModeUntil": "",
+        "RegistrationLogin": {
+          "Enabled": false,
+          "InfoText": "",
+          "LoginNameField": "",
+          "Fields": []
+        },
+        "RegistrationForms": [
+          {
+            "Form": "Single Registration",
+            "InfoText": "",
+            "ShowContests": true,
+            "HideEntryFees": false,
+            "ButtonText": "",
+            "IfLoggedIn": 0
+          },
+          {
+            "Form": "Group Registration",
+            "InfoText": "",
+            "ShowContests": false,
+            "HideEntryFees": false,
+            "ButtonText": "",
+            "IfLoggedIn": 0
+          }
+        ]
+      }
+    },
+    {
+      "Label": "",
+      "URLName": "participants",
+      "Enabled": true,
+      "ShowInMenu": false,
+      "ShowInMenu2": "always",
+      "ActiveFrom": "1900-01-01",
+      "ActiveUntil": "2026-06-16",
+      "Type": "lists",
+      "Config": {
+        "InfoText": "",
+        "Subtype": "dropdown",
+        "StandardDetails": "",
+        "Lists": [
+          {
+            "Name": "Online|Participants",
+            "Mode": "",
+            "Contest": null,
+            "ShowAs": "",
+            "Format": "VP",
+            "Live": false,
+            "Sortable": true,
+            "Leader": 10,
+            "ID": "5AF122"
+          }
+        ],
+        "LeaderboardHideCount": false,
+        "ShowCommentIcon": false
+      }
+    },
+    {
+      "Label": "",
+      "URLName": "live",
+      "Enabled": false,
+      "ShowInMenu": false,
+      "ShowInMenu2": "always",
+      "ActiveFrom": "2026-06-16",
+      "ActiveUntil": "2026-06-16 23:26:39",
+      "Type": "lists",
+      "Config": {
+        "InfoText": "",
+        "Subtype": "dropdown",
+        "StandardDetails": "details",
+        "Lists": [],
+        "LeaderboardHideCount": false,
+        "ShowCommentIcon": true
+      }
+    },
+    {
+      "Label": "",
+      "URLName": "results",
+      "Enabled": true,
+      "ShowInMenu": false,
+      "ShowInMenu2": "always",
+      "ActiveFrom": "2026-06-16",
+      "ActiveUntil": "2100-12-31 23:59:59",
+      "Type": "lists",
+      "Config": {
+        "InfoText": "",
+        "Subtype": "dropdown",
+        "StandardDetails": "details",
+        "Lists": [
+          {
+            "Name": "Online|Final",
+            "Mode": "",
+            "Contest": null,
+            "ShowAs": "",
+            "Format": "VP",
+            "Live": false,
+            "Sortable": false,
+            "Leader": 5,
+            "ID": "8AF0E5"
+          }
+        ],
+        "LeaderboardHideCount": false,
+        "ShowCommentIcon": true
+      }
+    },
+    {
+      "Label": "",
+      "URLName": "reviews",
+      "Enabled": true,
+      "ShowInMenu": false,
+      "ShowInMenu2": "always",
+      "ActiveFrom": "2001-01-01",
+      "ActiveUntil": "2100-12-31 23:59:59",
+      "Type": "reviews",
+      "Config": null
+    },
+    {
+      "Label": "",
+      "URLName": "contact",
+      "Enabled": true,
+      "ShowInMenu": false,
+      "ShowInMenu2": "always",
+      "ActiveFrom": "2001-01-01",
+      "ActiveUntil": "2100-12-31 23:59:59",
+      "Type": "contact",
+      "Config": {
+        "ComplaintsDeactivated": false,
+        "ComplaintsEmail": ""
+      }
+    },
+    {
+      "Label": "Details-Page",
+      "URLName": "details",
+      "Enabled": true,
+      "ShowInMenu": false,
+      "ShowInMenu2": "never",
+      "ActiveFrom": "2001-01-01",
+      "ActiveUntil": "2100-12-31 23:59:59",
+      "Type": "participantview",
+      "Config": {
+        "LiveUpdate": true,
+        "Elements": [
+          {
+            "ID": "TPLeXG",
+            "Type": "legs",
+            "Active": "no",
+            "EnabledFrom": "",
+            "EnabledTo": "",
+            "ShowIf": "",
+            "Styles": [],
+            "DynamicFormat": "",
+            "Children": [],
+            "Config": {
+              "EmbedInBox": true,
+              "ShowOverallRank": true,
+              "ShowGenderRank": true,
+              "ShowAgeGroupRank": true,
+              "ShowMaxRank": false,
+              "ShowPace": true,
+              "HidePrediction": false
+            }
+          },
+          {
+            "ID": "Pn3nYq",
+            "Type": "splits",
+            "Active": "no",
+            "EnabledFrom": "",
+            "EnabledTo": "",
+            "ShowIf": "",
+            "Styles": [],
+            "DynamicFormat": "",
+            "Children": [],
+            "Config": {
+              "EmbedInBox": true,
+              "ShowTOD": true,
+              "ShowGunTime": true,
+              "ShowChipTime": true,
+              "ShowSectorTime": true,
+              "ShowPace": true,
+              "ShowOverallRank": true,
+              "ShowGenderRank": true,
+              "ShowAgeGroupRank": true,
+              "ShowMaxRank": false,
+              "HidePrediction": false
+            }
+          },
+          {
+            "ID": "vC4WZr",
+            "Type": "list",
+            "Active": "no",
+            "EnabledFrom": "",
+            "EnabledTo": "",
+            "ShowIf": "",
+            "Styles": [],
+            "DynamicFormat": "",
+            "Children": [],
+            "Config": {
+              "EmbedInBox": true,
+              "List": ""
+            }
+          },
+          {
+            "ID": "E3VTCi",
+            "Type": "certificates",
+            "Active": "no",
+            "EnabledFrom": "",
+            "EnabledTo": "",
+            "ShowIf": "",
+            "Styles": [],
+            "DynamicFormat": "",
+            "Children": [],
+            "Config": {
+              "EmbedInBox": true,
+              "CertificateSets": []
+            }
+          },
+          {
+            "ID": "NAQDHY",
+            "Type": "links",
+            "Active": "no",
+            "EnabledFrom": "",
+            "EnabledTo": "",
+            "ShowIf": "",
+            "Styles": [],
+            "DynamicFormat": "",
+            "Children": [],
+            "Config": {
+              "EmbedInBox": true,
+              "Links": []
+            }
+          },
+          {
+            "ID": "gJNFQt",
+            "Type": "photos",
+            "Active": "no",
+            "EnabledFrom": "",
+            "EnabledTo": "",
+            "ShowIf": "",
+            "Styles": [],
+            "DynamicFormat": "",
+            "Children": [],
+            "Config": {
+              "EmbedInBox": true,
+              "PortalPhotographer": "",
+              "PhotographerEventID": "",
+              "PortalPhotographerBib": ""
+            }
+          },
+          {
+            "ID": "d3IXz1",
+            "Type": "comments",
+            "Active": "yes",
+            "EnabledFrom": "",
+            "EnabledTo": "",
+            "ShowIf": "",
+            "Styles": [],
+            "DynamicFormat": "",
+            "Children": [],
+            "Config": {
+              "EmbedInBox": true
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

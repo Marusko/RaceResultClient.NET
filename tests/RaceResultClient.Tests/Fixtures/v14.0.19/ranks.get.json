@@ -1,0 +1,80 @@
+[
+  {
+    "ID": 1,
+    "Name": "OverallRank",
+    "Group": [
+      "Contest",
+      "",
+      "",
+      ""
+    ],
+    "Sort": [
+      "DECIMALTIME",
+      "",
+      "",
+      ""
+    ],
+    "SortDesc": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "UseTies": false,
+    "ContestSort": false,
+    "Filter": "[FINISHED] AND [Status]=0",
+    "GroupName": ""
+  },
+  {
+    "ID": 2,
+    "Name": "GenderRank",
+    "Group": [
+      "Contest",
+      "Sex",
+      "",
+      ""
+    ],
+    "Sort": [
+      "DECIMALTIME",
+      "",
+      "",
+      ""
+    ],
+    "SortDesc": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "UseTies": false,
+    "ContestSort": false,
+    "Filter": "[FINISHED] AND [Status]=0",
+    "GroupName": ""
+  },
+  {
+    "ID": 3,
+    "Name": "AgeGroupRank",
+    "Group": [
+      "Contest",
+      "Sex",
+      "AgeGroup1",
+      ""
+    ],
+    "Sort": [
+      "DECIMALTIME",
+      "",
+      "",
+      ""
+    ],
+    "SortDesc": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "UseTies": false,
+    "ContestSort": false,
+    "Filter": "[FINISHED] AND [Status]=0",
+    "GroupName": ""
+  }
+]

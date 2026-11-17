@@ -1,0 +1,40 @@
+[
+  {
+    "ID": 1,
+    "Name": "Basic Fee",
+    "Contest": 1,
+    "DateStart": "1900-01-01",
+    "DateEnd": "2100-12-31",
+    "RegStart": "1900-01-01",
+    "RegEnd": "2100-12-31",
+    "Field": "",
+    "Operator": "",
+    "Value": "",
+    "Fee": 10,
+    "ShowAsBasicFee": false,
+    "IsMultiplicator": false,
+    "Multiplication": "",
+    "Category": "",
+    "Tax": 0,
+    "OrderPos": 0
+  },
+  {
+    "ID": 2,
+    "Name": "Basic Fee",
+    "Contest": 2,
+    "DateStart": "1900-01-01",
+    "DateEnd": "2100-12-31",
+    "RegStart": "1900-01-01",
+    "RegEnd": "2100-12-31",
+    "Field": "",
+    "Operator": "",
+    "Value": "",
+    "Fee": 10,
+    "ShowAsBasicFee": false,
+    "IsMultiplicator": false,
+    "Multiplication": "",
+    "Category": "",
+    "Tax": 0,
+    "OrderPos": 0
+  }
+]

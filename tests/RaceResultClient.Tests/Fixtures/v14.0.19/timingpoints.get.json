@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "STARTFINISH",
+    "Type": 9,
+    "DDT": 30,
+    "IgnoreIfTimeIn": 0,
+    "IgnoreBefore": 0,
+    "IgnoreAfter": 0,
+    "SubtractT0": 0,
+    "IgnorePS": 0,
+    "Position": "",
+    "OrderPos": 100,
+    "Color": ""
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "Name": "Group Registration",
+  "Type": 4,
+  "Sender": "noreply@raceresult.com",
+  "SenderName": "noreply@raceresult.com",
+  "ReplyTo": "",
+  "CC": "",
+  "BCC": "",
+  "ReceiverField": "",
+  "HTML": false,
+  "Method": "",
+  "Subject": "#Confirmation of Your Registration, [Event.Name]",
+  "Text": "#Last Name: [LastName]\r\nFirst Name: [FirstName]\r\nYear of Birth: [Year]\r\nGender: [translate([Sex];\"female\";\"male\";\"agender\")]\r\nContest: [Contest.Name]",
+  "Header": "#Hello!\r\n\r\nYour registrations for [Event.Name] have been transmitted. Please review the most important entries:",
+  "Footer": "#Your Organization Team",
+  "DefaultFilter": "",
+  "SetCustomFieldAfterSending": "",
+  "SaveResultIn": "",
+  "Attachments": null,
+  "HTTPHeaders": null
+}

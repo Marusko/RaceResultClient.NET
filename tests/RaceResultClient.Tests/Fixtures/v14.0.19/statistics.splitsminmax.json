@@ -1,0 +1,156 @@
+[
+  {
+    "ID": 1,
+    "Name": "Contest 1",
+    "Splits": [
+      {
+        "Name": "Start",
+        "Label": "Start",
+        "PaceSpeedUnit": 1,
+        "Distance": 0,
+        "SectorDistance": 0,
+        "IsStart": true,
+        "IsPreStart": false,
+        "Total": 0,
+        "TOD": {
+          "MinTime": {
+            "DecimalTime": 0,
+            "RoundedTime": 0,
+            "TimeText": "",
+            "InfoText": ""
+          },
+          "MaxTime": {
+            "DecimalTime": 0,
+            "RoundedTime": 0,
+            "TimeText": "",
+            "InfoText": ""
+          },
+          "MinPace": "",
+          "MaxPace": ""
+        },
+        "Gun": {
+          "MinTime": {
+            "DecimalTime": 0,
+            "RoundedTime": 0,
+            "TimeText": "",
+            "InfoText": ""
+          },
+          "MaxTime": {
+            "DecimalTime": 0,
+            "RoundedTime": 0,
+            "TimeText": "",
+            "InfoText": ""
+          },
+          "MinPace": "",
+          "MaxPace": ""
+        },
+        "Chip": {
+          "MinTime": {
+            "DecimalTime": 0,
+            "RoundedTime": 0,
+            "TimeText": "",
+            "InfoText": ""
+          },
+          "MaxTime": {
+            "DecimalTime": 0,
+            "RoundedTime": 0,
+            "TimeText": "",
+            "InfoText": ""
+          },
+          "MinPace": "",
+          "MaxPace": ""
+        },
+        "Sector": {
+          "MinTime": {
+            "DecimalTime": 0,
+            "RoundedTime": 0,
+            "TimeText": "",
+            "InfoText": ""
+          },
+          "MaxTime": {
+            "DecimalTime": 0,
+            "RoundedTime": 0,
+            "TimeText": "",
+            "InfoText": ""
+          },
+          "MinPace": "",
+          "MaxPace": ""
+        }
+      },
+      {
+        "Name": "Finish",
+        "Label": "Finish",
+        "PaceSpeedUnit": 1,
+        "Distance": 0,
+        "SectorDistance": 0,
+        "IsStart": false,
+        "IsPreStart": false,
+        "Total": 1,
+        "TOD": {
+          "MinTime": {
+            "DecimalTime": 43200,
+            "RoundedTime": 43200,
+            "TimeText": "12:00:00",
+            "InfoText": ""
+          },
+          "MaxTime": {
+            "DecimalTime": 43200,
+            "RoundedTime": 43200,
+            "TimeText": "12:00:00",
+            "InfoText": ""
+          },
+          "MinPace": "",
+          "MaxPace": ""
+        },
+        "Gun": {
+          "MinTime": {
+            "DecimalTime": 3600,
+            "RoundedTime": 3600,
+            "TimeText": "1:00:00",
+            "InfoText": ""
+          },
+          "MaxTime": {
+            "DecimalTime": 3600,
+            "RoundedTime": 3600,
+            "TimeText": "1:00:00",
+            "InfoText": ""
+          },
+          "MinPace": "",
+          "MaxPace": ""
+        },
+        "Chip": {
+          "MinTime": {
+            "DecimalTime": 3600,
+            "RoundedTime": 3600,
+            "TimeText": "1:00:00",
+            "InfoText": ""
+          },
+          "MaxTime": {
+            "DecimalTime": 3600,
+            "RoundedTime": 3600,
+            "TimeText": "1:00:00",
+            "InfoText": ""
+          },
+          "MinPace": "",
+          "MaxPace": ""
+        },
+        "Sector": {
+          "MinTime": {
+            "DecimalTime": 3600,
+            "RoundedTime": 3600,
+            "TimeText": "1:00:00",
+            "InfoText": ""
+          },
+          "MaxTime": {
+            "DecimalTime": 3600,
+            "RoundedTime": 3600,
+            "TimeText": "1:00:00",
+            "InfoText": ""
+          },
+          "MinPace": "",
+          "MaxPace": ""
+        }
+      }
+    ]
+  }
+]

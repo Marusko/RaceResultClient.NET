@@ -1,0 +1,30 @@
+[
+  {
+    "ID": 1,
+    "Name": "Contest 1",
+    "Splits": [
+      {
+        "Name": "Start",
+        "Label": "Start",
+        "HasBackup": false,
+        "Starters": 9,
+        "Main": 0,
+        "Backup": 0,
+        "Combined": 0,
+        "Manual": 0,
+        "Total": 0
+      },
+      {
+        "Name": "Finish",
+        "Label": "Finish",
+        "HasBackup": false,
+        "Starters": 1,
+        "Main": 0,
+        "Backup": 0,
+        "Combined": 0,
+        "Manual": 1,
+        "Total": 1
+      }
+    ]
+  }
+]

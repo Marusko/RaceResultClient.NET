@@ -27,7 +27,8 @@ RaceResultClient.NET/
 ├── PayModels.cs              # go-model's invoice and pay (online payment) models
 ├── Values.cs                 # RaceResultDateTime, RaceResultDate, string-backed value types, converters
 ├── Supporting.cs             # QueryParams builder, ApiException, Identifier, JSON config
-└── RaceResultClient.csproj
+├── RaceResultClient.csproj
+└── tests/RaceResultClient.Tests/   # Recorded server answers (Fixtures/<version>/) and live tests
 ```
 
 This client mirrors the official Go libraries [go-webapi](https://github.com/raceresult/go-webapi)
@@ -533,6 +534,28 @@ await ev.Settings.SaveAsync("EventName", "My Updated Race Name");
 - **`CancellationToken`** is an optional parameter on every async method, defaulting to `default`. It
   is the last one everywhere except `Settings.GetAsync(ct, params names)`, where it comes first so the
   names can be a `params` list.
+
+---
+
+## Tests
+
+`tests/RaceResultClient.Tests` holds real answers of a RaceResult server, one JSON file per read
+endpoint and design object, under `Fixtures/<server version>/`. Without a server, `dotnet test` checks
+that each one loads into the library's type with no field left over (an unknown field is an error)
+and that writing it back loses or changes nothing the server sent.
+
+With a server at hand, the live tests run too. They save every design object back unchanged and
+read it again, add and remove a participant with times (bib 901), and try the endpoints taken from
+RaceResult's own client, so use an event that may be changed:
+
+```bash
+RR_TEST_SERVER=192.168.1.20 RR_TEST_EVENT=123456 dotnet test
+```
+
+`RR_RECORD=1` also writes the server's answers as fixtures, in a folder named after its version.
+Secret values (keys, passwords, salts) and IBANs are blanked out on the way; read a new fixture
+before committing it all the same, since a template's free text can hold anything, and list an object
+that should not be recorded in `Fixtures/skip.txt`.
 
 ---
 

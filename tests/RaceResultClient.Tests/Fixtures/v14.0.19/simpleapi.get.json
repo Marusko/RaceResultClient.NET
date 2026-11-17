@@ -1,0 +1,62 @@
+[
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "rawdata/addmanual",
+    "Label": "manual"
+  },
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "timingpoints/get",
+    "Label": "points"
+  },
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "simpleapi/get",
+    "Label": "api"
+  },
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "rawdata/get",
+    "Label": "search"
+  },
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "rawdata/setinvalid",
+    "Label": "invalid"
+  },
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "data/list?&fields=Bib&listformat=JSON",
+    "Label": "bibs"
+  },
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "settings/getsettings?names=EventName,EventType",
+    "Label": "main"
+  },
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "data/count?filter=[Finished]=1",
+    "Label": "count"
+  },
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "contests/get",
+    "Label": "contest"
+  },
+  {
+    "Disabled": false,
+    "Key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "URL": "data/list?&fields=Bib,DisplayName,Start.ToD&sort=Start.ToD&listformat=JSON",
+    "Label": "starts"
+  }
+]

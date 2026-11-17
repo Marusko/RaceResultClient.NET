@@ -1,0 +1,2 @@
+# Fixture names the recorder leaves out: objects holding personal data (free text in a template, …).
+emailtemplates.get[html test]

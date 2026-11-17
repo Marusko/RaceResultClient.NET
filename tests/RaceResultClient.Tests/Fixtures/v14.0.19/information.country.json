@@ -1,0 +1,14 @@
+{
+  "IsoNo": 276,
+  "Alpha2": "DE",
+  "Alpha3": "DEU",
+  "IOCName": "GER",
+  "UCIName": "GER",
+  "Name": "Deutschland",
+  "DeciSep": ",",
+  "AreaCode": "49",
+  "Currency": "EUR",
+  "CurrencyName": "Euro",
+  "CurrencyFracName": "Cent",
+  "IsEU": true
+}
