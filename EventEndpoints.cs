@@ -737,12 +737,6 @@ public sealed class VouchersEndpoints(EventApiClient e)
 
     public Task<int[]> SaveAsync(IEnumerable<Voucher> items, CancellationToken ct = default)
         => e.PostAsync<int[]>("vouchers/save", null, items.ToArray(), ct);
-
-    /// <summary>Validates a voucher code (local convenience endpoint).</summary>
-    public Task<string> ValidateAsync(string code, int contest = 0, int bib = 0,
-        CancellationToken ct = default)
-        => e.GetAsync<string>("vouchers/validate",
-            new QueryParams().Add("code", code).Add("contest", contest).Add("bib", bib), ct);
 }
 
 // ── WebHooks ──────────────────────────────────────────────────────────────────
@@ -905,12 +899,6 @@ public sealed class UserDefinedFieldsEndpoints(EventApiClient e)
 
 public sealed class OverwriteValuesEndpoints(EventApiClient e)
 {
-    /// <summary>Returns overwrite values for the participant (local convenience endpoint).</summary>
-    public Task<OverwriteValue[]> GetAsync(Identifier id, int resultId = 0,
-        CancellationToken ct = default)
-        => e.GetAsync<OverwriteValue[]>("overwritevalues/get",
-            id.ApplyTo(new QueryParams()).Add("resultID", resultId), ct);
-
     public Task<int> CountAsync(Identifier id, int result = 0, int contest = 0, string filter = "",
         CancellationToken ct = default)
         => e.GetAsync<int>("overwritevalues/count",

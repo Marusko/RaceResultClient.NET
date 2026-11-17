@@ -195,7 +195,7 @@ All groups below are properties on `EventApiClient`.
 | `Kiosks` | CRUD for kiosk configurations |
 | `Labels` | CRUD for label designs; render PDF |
 | `Lists` | CRUD for list designs; render PDF/HTML/XML/JSON/CSV/XLSX/… |
-| `OverwriteValues` | Read, save, delete and count result overwrite values |
+| `OverwriteValues` | Save, delete and count result overwrite values |
 | `Participants` | Full participant lifecycle: create, read, update, delete, import (incl. SES), bib management |
 | `Pictures` | Manage participant/event pictures and thumbnails |
 | `Rankings` | CRUD for ranking definitions |
@@ -213,7 +213,7 @@ All groups below are properties on `EventApiClient`.
 | `TimingPointRules` | CRUD for timing point decoder routing rules |
 | `Times` | Submit passings, read/delete/copy/swap times, single-start, random and interpolated times |
 | `UserDefinedFields` | Read and overwrite user-defined formula fields |
-| `Vouchers` | CRUD for discount vouchers and validation |
+| `Vouchers` | CRUD for discount vouchers |
 | `WebHooks` | CRUD for webhook configurations |
 
 ---

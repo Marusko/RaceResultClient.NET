@@ -1172,8 +1172,6 @@ public record InvoicePaymentTerms
 
 public record UserDefinedField(string Name, string Expression, string Note, string Group);
 
-public record OverwriteValue([property: JsonPropertyName("ID")] int Id, [property: JsonPropertyName("PID")] int Pid, [property: JsonPropertyName("ResultID")] int ResultId, decimal Value);
-
 // ── Archives ──────────────────────────────────────────────────────────────────
 
 public record ArchiveMatch([property: JsonPropertyName("ID")] int Id, string FirstName, string LastName, int Year);
