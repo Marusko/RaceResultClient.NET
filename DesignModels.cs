@@ -21,6 +21,30 @@ public enum PageSize
     Letter = 5, Legal = 6, A6 = 7, UserDefined = 8
 }
 
+public static class PageSizeExtensions
+{
+    /// <summary>
+    /// Width and height in mm, swapped for landscape (go-model's <c>page.Size.ToMM</c>);
+    /// <see cref="PageSize.UserDefined"/> has no size and gives (0, 0).
+    /// </summary>
+    public static (decimal Width, decimal Height) ToMm(this PageSize size, bool landscape)
+    {
+        var (w, h) = size switch
+        {
+            PageSize.A1 => (594m, 840m),
+            PageSize.A2 => (420m, 594m),
+            PageSize.A3 => (297m, 420m),
+            PageSize.A4 => (210m, 297m),
+            PageSize.A5 => (148m, 210m),
+            PageSize.A6 => (105m, 148m),
+            PageSize.Letter => (216m, 279m),
+            PageSize.Legal => (216m, 356m),
+            _ => (0m, 0m)
+        };
+        return landscape ? (h, w) : (w, h);
+    }
+}
+
 // ── certificate ───────────────────────────────────────────────────────────────
 
 /// <summary>certificate.PageSize — serialized as a string ("A4", "Letter", …).</summary>
@@ -34,6 +58,37 @@ public enum CertificatePageSize
 /// <summary>certificate.PageFormat — serialized as a string ("Portrait"/"Landscape").</summary>
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum CertificatePageFormat { Portrait = 0, Landscape = 1 }
+
+public static class CertificatePageSizeExtensions
+{
+    /// <summary>The portrait height in mm (go-model's <c>certificate.PageSize.Height</c>); 0 for <see cref="CertificatePageSize.UserDefined"/>.</summary>
+    public static decimal Height(this CertificatePageSize size) => size switch
+    {
+        CertificatePageSize.A1 => 841m,
+        CertificatePageSize.A2 => 594m,
+        CertificatePageSize.A3 => 420m,
+        CertificatePageSize.A4 => 297m,
+        CertificatePageSize.A5 => 210m,
+        CertificatePageSize.A6 => 148m,
+        CertificatePageSize.Letter => 11 * 25.4m,
+        CertificatePageSize.Legal => 14 * 25.4m,
+        _ => 0m
+    };
+
+    /// <summary>The portrait width in mm (go-model's <c>certificate.PageSize.Width</c>); 0 for <see cref="CertificatePageSize.UserDefined"/>.</summary>
+    public static decimal Width(this CertificatePageSize size) => size switch
+    {
+        CertificatePageSize.A1 => 594m,
+        CertificatePageSize.A2 => 420m,
+        CertificatePageSize.A3 => 297m,
+        CertificatePageSize.A4 => 210m,
+        CertificatePageSize.A5 => 148m,
+        CertificatePageSize.A6 => 105m,
+        CertificatePageSize.Letter => 8.5m * 25.4m,
+        CertificatePageSize.Legal => 8.5m * 25.4m,
+        _ => 0m
+    };
+}
 
 public enum CertificateElementType
 {
@@ -92,6 +147,108 @@ public record Certificate
     [JsonPropertyName("Fields")]
     public CertificateElement[] Elements { get; init; } = [];
     public CertificateZone[] Zones { get; init; } = [];
+
+    /// <summary>The number of pages: the highest <see cref="CertificateElement.Page"/>, at least 1.</summary>
+    public int PageCount() => Elements.Aggregate(1, (c, e) => Math.Max(c, e.Page));
+
+    /// <summary>The width in mm, as printed (landscape swaps the page's sides).</summary>
+    public decimal GetWidth() => PageFormat == CertificatePageFormat.Landscape
+        ? (PageSize == CertificatePageSize.UserDefined ? PageHeight : PageSize.Height())
+        : (PageSize == CertificatePageSize.UserDefined ? PageWidth : PageSize.Width());
+
+    /// <summary>The height in mm, as printed (landscape swaps the page's sides).</summary>
+    public decimal GetHeight() => PageFormat == CertificatePageFormat.Landscape
+        ? (PageSize == CertificatePageSize.UserDefined ? PageWidth : PageSize.Width())
+        : (PageSize == CertificatePageSize.UserDefined ? PageHeight : PageSize.Height());
+
+    /// <summary>
+    /// Where the holes are punched, (x, y) in mm from the top left, for <see cref="Holes"/>:
+    /// 1 normal, 2 MTB, 3 duo (two chips), 4 single, 99 <see cref="SpecialHoles"/> ("x:y;x:y;…").
+    /// Empty for any other value (go-model's <c>Certificate.GetHoles</c>).
+    /// </summary>
+    public (decimal X, decimal Y)[] GetHoles()
+    {
+        var dest = new List<(decimal X, decimal Y)>();
+        void Add(decimal x, decimal y) => dest.Add((x, y));
+
+        var w = GetWidth();
+        var h = GetHeight();
+        decimal cl = CutLeft, ct = CutTop, cb = CutBottom, cr = CutRight;
+
+        switch (Holes)
+        {
+            case 1 or 2:
+                Add(cl + 9, ct + 9);
+                Add(w - cr - 9, ct + 9);
+                break;
+            case 3 or 4:
+                // lower chip
+                Add(cl + 30, h - cb - 9.5m);
+                Add(cl + 30, h - cb - 22);
+                Add(w - cr - 30, h - cb - 9.5m);
+                Add(w - cr - 30, h - cb - 22);
+
+                // upper chip
+                if (Holes == 3) // duo
+                {
+                    Add(cl + 30, h - cb - 41.5m);
+                    Add(cl + 30, h - cb - 54);
+                    Add(w - cr - 30, h - cb - 41.5m);
+                    Add(w - cr - 30, h - cb - 54);
+                }
+                break;
+        }
+
+        switch (Holes)
+        {
+            case 1: // normal
+                Add(cl + 9, h - cb - 9);
+                Add(w - cr - 9, h - cb - 9);
+                break;
+
+            case 2: // mtb
+                // go-model's decimal has 4 places, so its halving truncates there
+                var middle = cl + Math.Truncate((w - cl - cr) / 2 * 10000) / 10000;
+                Add(middle - 10, h - cb - 9);
+                Add(middle + 10, h - cb - 9);
+                break;
+
+            case 3: // duo: bib top holes, then bib bottom holes
+                Add(cl + 9, ct + 83 + 9);
+                Add(w - cr - 9, ct + 83 + 9);
+                Add(cl + 9, ct + 233 - 9);
+                Add(w - cr - 9, ct + 233 - 9);
+                break;
+
+            case 4: // single: bib top holes, then bib bottom holes
+                Add(cl + 9, ct + 85 + 9);
+                Add(w - cr - 9, ct + 85 + 9);
+                Add(cl + 9, ct + 265 - 9);
+                Add(w - cr - 9, ct + 265 - 9);
+                break;
+
+            case 99: // special
+                foreach (var s in SpecialHoles.Split(';'))
+                {
+                    var c = s.Split(':');
+                    if (c.Length < 2) continue;
+                    var x = ParseMm(c[0]);
+                    var y = ParseMm(c[1]);
+                    if (x <= 0 || y <= 0) continue;
+                    Add(cl + x, ct + y);
+                }
+                break;
+        }
+        return dest.ToArray();
+    }
+
+    // As go-model: an unreadable number is 0, a number keeps 4 decimal places.
+    private static decimal ParseMm(string s)
+        => double.TryParse(s.Trim(), System.Globalization.NumberStyles.Float,
+               System.Globalization.CultureInfo.InvariantCulture, out var f)
+           && double.IsFinite(f) && Math.Abs(f) < 1e15
+            ? Math.Round((decimal)f, 4, MidpointRounding.ToEven)
+            : 0m;
 }
 
 public record CertificateElement
@@ -615,6 +772,9 @@ public record RegistrationErrorMessages
 {
     public string BeforRegStart { get; init; } = "";
     public string AfterRegEnd { get; init; } = "";
+    public string RegFull { get; init; } = "";
+    public string QueueFull { get; init; } = "";
+    public string ChangeNotAllowed { get; init; } = "";
 }
 
 // ── statistic ─────────────────────────────────────────────────────────────────

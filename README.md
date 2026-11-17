@@ -22,6 +22,8 @@ RaceResultClient.NET/
 ├── PublicAndGeneral.cs       # Server-level endpoints (login, event lifecycle, user rights)
 ├── Models.cs                 # Core request/response record types, enums and RaceResult's codes
 ├── DesignModels.cs           # Design-object models (certificate, label, list, kiosk, …)
+├── WebsiteModels.cs          # go-model's website (event site, participant view) and presenter models
+├── PayModels.cs              # go-model's invoice and pay (online payment) models
 ├── Supporting.cs             # QueryParams builder, ApiException, Identifier, JSON config
 └── RaceResultClient.csproj
 ```
@@ -32,8 +34,9 @@ model fields track those repositories. Enums serialize numerically (as in Go's `
 except the certificate page-size/format enums which serialize as strings.
 
 Property names follow C# conventions (`Id`, `Url`, `Rssi`), but every property whose Go JSON name
-differs carries a `[JsonPropertyName]` attribute (`ID`, `URL`, `RSSI`, …), so the bytes on the wire
-are byte-for-byte identical to what go-webapi sends and expects.
+differs carries a `[JsonPropertyName]` attribute (`ID`, `URL`, `RSSI`, …), so the JSON names on the
+wire are the ones go-webapi sends and expects. The JSON is not byte-for-byte Go's, though: a `null`
+property is left out where Go writes `null`, and dates are written by `System.Text.Json`.
 
 ---
 
@@ -56,8 +59,9 @@ var checkedClient = new ApiClient("my-raceresult-server.com", true, "webapi/1.0"
 Three authentication methods are supported:
 
 ```csharp
-// Username + password
+// Username + password (optionally with a TOTP code, or signing in as another user)
 await client.Public.LoginAsync(new LoginOptions { User = "admin", Password = "secret" });
+await client.Public.LoginAsync(new LoginOptions { User = "admin", Password = "secret", Totp = "123456" });
 
 // API key
 await client.Public.LoginAsync(new LoginOptions { ApiKey = "your-api-key" });
@@ -81,7 +85,7 @@ client.Timeout = TimeSpan.FromMinutes(2);    // go-webapi's SetTimeout
 // By known event ID
 var ev = client.ForEvent("my-event-id");
 
-// Or create a new event and get a client for it
+// Or create a new event (online server only) and get a client for it
 var ev = await client.Public.CreateEventAsync("My Race 2025", new DateTime(2025, 6, 1));
 
 // Or pick from the event list
@@ -139,7 +143,8 @@ using var client = new ApiClient("my-server.com");
 | `Public.LoginAsync` | Authenticate and store session |
 | `Public.LogoutAsync` | Terminate the current session |
 | `Public.GetEventListAsync` | List events for a given year |
-| `Public.CreateEventAsync` | Create a new event |
+| `Public.GetNextEventListAsync` / `Public.GetPastEventListAsync` | List events from today on / up to today |
+| `Public.CreateEventAsync` | Create a new event (online server only), optionally as a copy (`copyOf`, `copyMode`) |
 | `Public.DeleteEventAsync` | Permanently delete an event |
 | `Public.GetUserInfoAsync` | Get info about the authenticated user |
 | `Public.TokenFromSessionAsync` | Exchange the session for an OAuth2 token |
@@ -173,15 +178,15 @@ All groups below are properties on `EventApiClient`.
 | `EmailTemplates` | CRUD for email/SMS templates; preview and send |
 | `EntryFees` | CRUD for entry fee tiers |
 | `Exporters` | CRUD and start/stop for data exporters |
-| `File` | File access, activation, version, modjobid, ownership/rights |
+| `File` | File download/upload, activation, version, expression check, modjobid, ownership/rights |
 | `Forwarding` | Manage and monitor live data forwarding |
 | `GroupTimes` | Read and save group start times / finish time limits |
 | `History` | Read, export and delete participant field history |
-| `Information` | Frequent first names and gender lookup |
+| `Information` | Frequent first names, gender lookup, adding first names |
 | `Kiosks` | CRUD for kiosk configurations |
 | `Labels` | CRUD for label designs; render PDF |
 | `Lists` | CRUD for list designs; render PDF/HTML/XML/JSON/CSV/XLSX/… |
-| `OverwriteValues` | Save/delete/count result overwrite values |
+| `OverwriteValues` | Read, save, delete and count result overwrite values |
 | `Participants` | Full participant lifecycle: create, read, update, delete, import (incl. SES), bib management |
 | `Pictures` | Manage participant/event pictures and thumbnails |
 | `Rankings` | CRUD for ranking definitions |
@@ -197,7 +202,7 @@ All groups below are properties on `EventApiClient`.
 | `TeamScores` | CRUD for team scoring definitions |
 | `TimingPoints` | CRUD for timing point definitions |
 | `TimingPointRules` | CRUD for timing point decoder routing rules |
-| `Times` | Submit passings, read/delete/copy/swap times, single-start and random times |
+| `Times` | Submit passings, read/delete/copy/swap times, single-start, random and interpolated times |
 | `UserDefinedFields` | Read and overwrite user-defined formula fields |
 | `Vouchers` | CRUD for discount vouchers and validation |
 | `WebHooks` | CRUD for webhook configurations |
@@ -237,24 +242,30 @@ definition set up by hand and exported):
 | `TypeOfSport` | `Split.TypeOfSport` | `None` 0, `Swimming` 4, `Skiing` 5, `Other` 10, `Cycling` 11, `Running` 100, `TransitionFirstRead` 250, `TransitionLastRead` 251 |
 | `ContestTimingMode` | `Contest.TimingMode` | `GunTime` 0, `ChipTime` 1 |
 | `ParticipantStatus` | `Participant.Status` | `Regular` 0, `OutOfCompetition` 1, `Disqualified` 2, `DidNotFinish` 3, `DidNotStart` 4, `NotPresent` 5 |
-| `CustomFieldType` | `CustomField.FieldType` | `Text` 0 … `Transponder` 10 |
+| `CustomFieldType` | `CustomField.FieldType` | `Text` 0 … `Transponder` 10, `Time` 11 |
 | `VoucherType` | `Voucher.Type` | `Amount` 0, `Percent` 1, `FirstReg` 2, `PrevReg` 3 |
 | `WebHookType` | `WebHook.Type` | `ParticipantNew` 0 … `ModJobIdSettings` 4 |
 | `TriggerType` | `TriggerSettings.TriggerType` | `NewTime` 0 … `NewRawDataV2` 10 |
 | `StatisticAggregation` | `Statistics.Aggregation`, `Statistics.ComputeAsync`, `Data.TransformationAsync` | `Count` 1, `Minimum` 2, `Maximum` 3, `Mean` 4, `Sum` 5 |
 | `CertificateAlignment` / `CertificateVAlignment` | `CertificateElement.Alignment` / `.VAlignment` | `Left` 1, `Center` 2, `Right` 3 / `Top` 0, `Middle` 1, `Bottom` 2 |
+| `WebsiteRegIfLoggedIn` | `WebsiteRegConfig.IfLoggedIn`, `WebsiteRegistration.IfLoggedIn` | `Always` 0, `IfLoggedIn` 1, `IfNotLoggedIn` 2 |
+| `PaymentMethod` | `PayPayment.Method`, `PayMethod.Id`, `PayMethodOption.Id`, … | `NoPayment` 0 … `TazaPay` 42, `Cb` 99 (go-model's `Pm…`) |
+| `PayState` | `PayPayment.PayState` | `Undefined` 0, `Pending` 1, `Underpaid` 2, `Paid` 3, `Overpaid` 4, `NoPayout` 5 |
 
 The design enums (`PageSize`, `PageFormat`, `CertificateElementType`, `LabelAlignment`,
 `ListShowAt`, `ListPageBreak`, `EmailTemplateType`, `CertificateSetType`, …) cover the same ground
 for the design objects.
 
-Two fields RaceResult stores as text keep named string constants instead, since a value outside the
-set is still valid text:
+Fields RaceResult stores as text stay `string`. Where their values are a known set, a static class
+names them, since a value outside the set is still valid text:
 
 | Class | Field | Values |
 |---|---|---|
 | `SplitDistanceUnits` | `Split.DistanceUnit` | `m`, `km`, `miles` |
-| `SplitSpeed` | `Split.SpeedOrPace` (the number as text) | `None` 0 … `MetresPerSecond` 6 |
+| `WebsiteTabTypes`, `WebsiteShowInMenu`, `WebsiteElementTypes`, `WebsiteElementActive`, `WebsiteFieldDisplayModes`, `WebsiteChartTypes`, `WebsiteRankScopes`, … | the event site's `Type`, `ShowInMenu2`, `Active`, … | go-model's `website` constants |
+
+`Split.SpeedOrPace` is text too, but holds a number: the `SplitSpeed` enum (`None` 0 …
+`MetresPerSecond` 6) names it, so `((int)SplitSpeed.Kmh).ToString()` is the value for km/h.
 
 ```csharp
 // Lap 2: 5 km from the previous split, between 5 s and 1 min after it, cycling
@@ -294,25 +305,39 @@ JSON) does not have to write them itself:
 | `TableValue` | a row of the event file's generic lookup table |
 | `ParticipantAndDummyCount` | a participant count split into real and dummy records |
 | `ArchiveEvent`, `ArchiveContest` | an archive's events and their contests |
+| `Website`, `WebsiteTab`, `WebsiteElement`, the `Website…Config` records, `WebsiteRegistrationConfig`, `WebsiteTrackingData`, … | the event site (go-model's `website`): its tabs, the participant view's elements, its registration overview and tracking map |
+| `Presenter`, `PresenterScreen`, `PresenterWindow`, … | a presenter's screens (go-model's `presenter`) |
+| `Invoice`, `InvoiceWithSum`, `InvoiceWithDetails`, `InvoiceSettings`, `InvoiceFilter`, … | invoices (go-model's `invoice`) |
+| `PayPayment`, `PayRegistration`, `PayMethod`, `PayCreateRequest`, `PayCaptureResponse`, … | RACE RESULT's online payment service (go-model's `pay`) |
+
+A tab's or element's `Config` is the raw `JsonElement`; deserialize it into the record its `Type`
+names (`tab.Config?.Deserialize<WebsiteTabListsConfig>()`). go-model's helpers are ported with them:
+`WebsiteTab.IsVisibleInMenu(t)` / `IsWithinActiveTimeFrame(t)`, `Certificate.PageCount()`,
+`GetWidth()`, `GetHeight()`, `GetHoles()`, `CertificatePageSize.Width()` / `Height()` and
+`PageSize.ToMm(landscape)`.
 
 `UserRight.Has("participants.edit")` reads a rights map the way go-model's `UserRights.Has` does,
 `"*"` as a group or a detail included.
 
 ### `QueryParams` — Fluent query string builder
 
-`QueryParams` is a fluent, type-safe builder used internally and exposed for raw calls:
+`QueryParams` is a fluent, type-safe builder used internally and exposed for raw calls. `Add` leaves
+out an empty string and a numeric `0`; `AddAlways` sends the `0`:
 
 ```csharp
 var q = new QueryParams()
     .Add("filter", "contest=1")
-    .Add("limitFrom", 0)
+    .AddAlways("limitFrom", 0)
     .Add("limitTo", 50)
     .AddArray("fields", new[] { "Firstname", "Lastname", "Bib" });
+
+byte[] raw = await ev.GetRawAsync("data/list?" + q.ToQueryString());
 ```
 
 ### `ApiException` — Error handling
 
-Any non-200 HTTP response throws an `ApiException` carrying the status code and server error message:
+Any non-200 HTTP response throws an `ApiException` carrying the status code and server error message
+(unless an `ErrorFactory` is set, see below):
 
 ```csharp
 try
@@ -337,6 +362,10 @@ If you need to call an endpoint not yet surfaced by the library:
 
 ```csharp
 byte[] raw = await ev.GetRawAsync("some/undocumented/endpoint");
+byte[] posted = await ev.PostRawAsync("some/undocumented/endpoint", new { Name = "x" });
+
+// Several resources in one round trip (go-webapi's MultiRequest): the answer is keyed by request
+Dictionary<string, JsonElement> many = await ev.MultiRequestAsync(requests);
 ```
 
 ---
@@ -408,7 +437,7 @@ await ev.Participants.SaveFieldsAsync(
     id: Identifier.Bib(42),
     values: new Dictionary<string, object?>
     {
-        ["Status"] = 1,
+        ["Status"] = (int)ParticipantStatus.DidNotStart,
         ["Comment"] = "DNS"
     }
 );
@@ -428,11 +457,15 @@ await ev.Settings.SaveAsync("EventName", "My Updated Race Name");
 
 - **`ApiClient`** owns the `HttpClient` and session state. It is the root object and should be disposed when done.
 - **`EventApiClient`** is a lightweight façade created via `client.ForEvent(id)`. It holds only an event ID string and a reference to `ApiClient` — no state of its own. Endpoint group objects (e.g. `ev.Participants`) are instantiated on each property access (no caching overhead, no shared state).
-- **All models** use C# `record` types with `init`-only properties, making them immutable and copy-friendly.
-- **Serialization** uses `System.Text.Json` throughout, with case-insensitive deserialization. Enums
-  serialize as their numbers, as Go's `encoding/json` does; the certificate page-size/format enums
-  are the exception and serialize as strings, matching go-model's own marshallers.
-- **`CancellationToken`** is a last optional parameter on every async method, defaulting to `default`.
+- **Models** are C# `record` types, copied with `with`; almost all of their properties are
+  `init`-only. `LoginOptions` is a plain settable class.
+- **Serialization** uses `System.Text.Json` throughout, with case-insensitive deserialization; `null`
+  properties are left out when writing. Enums serialize as their numbers, as Go's `encoding/json`
+  does; the certificate page-size/format enums are the exception and serialize as strings, matching
+  go-model's own marshallers.
+- **`CancellationToken`** is an optional parameter on every async method, defaulting to `default`. It
+  is the last one everywhere except `Settings.GetAsync(ct, params names)`, where it comes first so the
+  names can be a `params` list.
 
 ---
 

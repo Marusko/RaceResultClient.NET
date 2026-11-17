@@ -533,7 +533,7 @@ public enum CustomFieldType
 {
     Text = 0, DropDown = 1, YesNo = 2, Integer = 3,
     Decimal = 4, Date = 5, Currency = 6, Country = 7,
-    Email = 8, CellPhone = 9, Transponder = 10
+    Email = 8, CellPhone = 9, Transponder = 10, Time = 11
 }
 
 public record CustomField
@@ -875,6 +875,9 @@ public record TimingPoint
     public string Position { get; init; } = "";
     public int OrderPos { get; init; }
     public string Color { get; init; } = "";
+    /// <summary>The weakest signal (RSSI) a passing may have to count at this timing point.</summary>
+    [JsonPropertyName("MinRSSI")]
+    public int MinRssi { get; init; }
 }
 
 public record TimingPointRule
