@@ -90,6 +90,13 @@ public sealed class EventApiClient
         => Client.PostAsync<Dictionary<string, JsonElement>>(
             EventId, "multirequest", query: null, body: requests.ToArray(), ct: ct);
 
+    /// <summary>
+    /// <c>check</c>: what RaceResult's web UI calls periodically while an event is open; it appears to
+    /// keep the session alive. Not in go-webapi. RaceResult answers <c>1</c>; the number is returned as is.
+    /// </summary>
+    public Task<int> CheckAsync(string lang = "", CancellationToken ct = default)
+        => Client.GetAsync<int>(EventId, "check", new QueryParams().Add("lang", lang), ct);
+
     // ── Internal helpers used by endpoint classes ─────────────────────────────
 
     internal Task<byte[]> GetBytesAsync(string cmd, QueryParams? q = null, CancellationToken ct = default)

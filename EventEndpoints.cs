@@ -28,7 +28,7 @@ public sealed class AgeGroupsEndpoints(EventApiClient e)
 
     /// <summary>Generates new age groups from templates.</summary>
     public Task<AgeGroup[]> GenerateAsync(string mode, int contest, int set, bool ageBase,
-        string date, string lang = "", CancellationToken ct = default)
+        RaceResultDateTime date, string lang = "", CancellationToken ct = default)
         => e.GetAsync<AgeGroup[]>("agegroups/generate",
             new QueryParams()
                 .Add("mode", mode).Add("contest", contest).Add("set", set)
@@ -555,6 +555,14 @@ public sealed class SettingsEndpoints(EventApiClient e)
         CancellationToken ct = default)
         => e.GetVoidAsync("settings/delete",
             new QueryParams().Add("name", name).Add("contest", contest).Add("result", result), ct);
+
+    /// <summary>The event's invoice settings, read from its <c>Invoice…</c> settings (not in go-webapi).</summary>
+    public async Task<InvoiceSettings> GetInvoiceSettingsAsync(CancellationToken ct = default)
+        => InvoiceSettings.FromSettings(await GetAsync(ct, InvoiceSettings.SettingNames));
+
+    /// <summary>Saves the event's invoice settings as its <c>Invoice…</c> settings (not in go-webapi).</summary>
+    public Task SaveInvoiceSettingsAsync(InvoiceSettings settings, CancellationToken ct = default)
+        => SaveAsync(settings.ToSettings(), ct);
 
     /// <summary>Returns the names of settings matching the given prefix.</summary>
     public Task<string[]> NamesByPrefixAsync(string prefix, CancellationToken ct = default)

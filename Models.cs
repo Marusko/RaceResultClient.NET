@@ -6,8 +6,8 @@ namespace RaceResultClient;
 
 // Field-type mapping notes (go-model → C#):
 //   decimal.Decimal     → decimal          (marshals as a JSON number)
-//   date.Date           → string           (marshals as "2006-01-02")
-//   datetime.DateTime   → string           (marshals as e.g. "2006-01-02 15:04:05", non-ISO)
+//   date.Date           → RaceResultDate      (marshals as "2006-01-02", "" when not set)
+//   datetime.DateTime   → RaceResultDateTime  ("2006-01-02 15:04:05" without a zone, RFC 3339 with one)
 //   time.Time           → DateTime         (marshals as RFC3339)
 //   variant.Variant     → JsonElement?     (arbitrary JSON value)
 //   variant.VariantMap  → Dictionary<string, JsonElement>
@@ -27,7 +27,7 @@ public record Participant
     public string Lastname { get; init; } = "";
     public string Firstname { get; init; } = "";
     public string Sex { get; init; } = "";
-    public string DateOfBirth { get; init; } = "";
+    public RaceResultDate DateOfBirth { get; init; }
     public string Street { get; init; } = "";
     [JsonPropertyName("ZIP")]
     public string Zip { get; init; } = "";
@@ -58,9 +58,9 @@ public record Participant
     [JsonPropertyName("SEPAMandate")]
     public string SepaMandate { get; init; } = "";
     public string Comment { get; init; } = "";
-    public string Created { get; init; } = "";
-    public string Modified { get; init; } = "";
-    public string Uploaded { get; init; } = "";
+    public RaceResultDateTime Created { get; init; }
+    public RaceResultDateTime Modified { get; init; }
+    public RaceResultDateTime Uploaded { get; init; }
     public string CreatedBy { get; init; } = "";
     [JsonPropertyName("ForeignID")]
     public int ForeignId { get; init; }
@@ -125,8 +125,8 @@ public record Contest
     public string Name { get; init; } = "";
     public string NameShort { get; init; } = "";
     public string Color { get; init; } = "";
-    public string AgeStart { get; init; } = "";
-    public string AgeEnd { get; init; } = "";
+    public RaceResultDate AgeStart { get; init; }
+    public RaceResultDate AgeEnd { get; init; }
     public string Sex { get; init; } = "";
     public int Day { get; init; }
     public decimal StartTime { get; init; }
@@ -164,8 +164,8 @@ public record AgeGroup
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public string NameShort { get; init; } = "";
-    public string DateStart { get; init; } = "";
-    public string DateEnd { get; init; } = "";
+    public RaceResultDate DateStart { get; init; }
+    public RaceResultDate DateEnd { get; init; }
     public int AgeFrom { get; init; }
     public int AgeTo { get; init; }
     public int Contest { get; init; }
@@ -393,7 +393,7 @@ public record Split
     public decimal BackupOffset { get; init; }
     public TypeOfSport TypeOfSport { get; init; }
     public decimal Distance { get; init; }
-    public string DistanceUnit { get; init; } = "";
+    public SplitDistanceUnit DistanceUnit { get; init; }
     public SplitDistanceFrom DistanceFrom { get; init; }
     public decimal TimeMin { get; init; }
     public decimal TimeMax { get; init; }
@@ -402,12 +402,9 @@ public record Split
     public SplitType SplitType { get; init; }
     public int SectorFrom { get; init; }
     public int SectorTo { get; init; }
-    /// <summary>
-    /// The speed or pace shown for this split. RaceResult stores one of
-    /// <see cref="SplitSpeed"/>'s values here as text, so <c>((int)SplitSpeed.Kmh).ToString()</c>
-    /// is the value for km/h.
-    /// </summary>
-    public string SpeedOrPace { get; init; } = "";
+    /// <summary>The speed or pace shown for this split. RaceResult stores the number as text (<c>"4"</c>).</summary>
+    [JsonConverter(typeof(NumberTextEnumConverter<SplitSpeed>))]
+    public SplitSpeed SpeedOrPace { get; init; }
     public SplitTimeMode TimeMode { get; init; }
     public string Label { get; init; } = "";
     public int SectorFrom2 { get; init; }
@@ -448,7 +445,7 @@ public enum SplitTimeMode
 
 /// <summary>
 /// A split's speed or pace display (go-model's <c>SplitSpeed…</c> constants).
-/// <see cref="Split.SpeedOrPace"/> holds one of these values as text.
+/// <see cref="Split.SpeedOrPace"/> stores the number as text.
 /// </summary>
 public enum SplitSpeed
 {
@@ -488,11 +485,23 @@ public static class SplitDistanceFromExtensions
 }
 
 /// <summary><see cref="Split.DistanceUnit"/>: the units RaceResult's splits page offers.</summary>
-public static class SplitDistanceUnits
+[JsonConverter(typeof(StringValueConverter<SplitDistanceUnit>))]
+public readonly struct SplitDistanceUnit(string value) : IStringValue<SplitDistanceUnit>, IEquatable<SplitDistanceUnit>
 {
-    public const string Meters = "m";
-    public const string Kilometers = "km";
-    public const string Miles = "miles";
+    public static readonly SplitDistanceUnit Meters = new("m");
+    public static readonly SplitDistanceUnit Kilometers = new("km");
+    public static readonly SplitDistanceUnit Miles = new("miles");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static SplitDistanceUnit From(string value) => new(value);
+    public static implicit operator SplitDistanceUnit(string value) => new(value);
+    public bool Equals(SplitDistanceUnit other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is SplitDistanceUnit o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(SplitDistanceUnit a, SplitDistanceUnit b) => a.Equals(b);
+    public static bool operator !=(SplitDistanceUnit a, SplitDistanceUnit b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 /// <summary>RaceResult's types of sport (<see cref="Split.TypeOfSport"/>, "Type of Sport (up to here)").</summary>
@@ -533,7 +542,7 @@ public enum CustomFieldType
 {
     Text = 0, DropDown = 1, YesNo = 2, Integer = 3,
     Decimal = 4, Date = 5, Currency = 6, Country = 7,
-    Email = 8, CellPhone = 9, Transponder = 10
+    Email = 8, CellPhone = 9, Transponder = 10, Time = 11
 }
 
 public record CustomField
@@ -564,10 +573,10 @@ public record EntryFee
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public int Contest { get; init; }
-    public string DateStart { get; init; } = "";
-    public string DateEnd { get; init; } = "";
-    public string RegStart { get; init; } = "";
-    public string RegEnd { get; init; } = "";
+    public RaceResultDate DateStart { get; init; }
+    public RaceResultDate DateEnd { get; init; }
+    public RaceResultDate RegStart { get; init; }
+    public RaceResultDate RegEnd { get; init; }
     public string Field { get; init; } = "";
     public string Operator { get; init; } = "";
     public string Value { get; init; } = "";
@@ -639,8 +648,8 @@ public record HistoryFilter
     public string[]? NewValue { get; init; }
     public string[]? Application { get; init; }
     public string[]? User { get; init; }
-    public string? From { get; init; }
-    public string? To { get; init; }
+    public RaceResultDateTime From { get; init; }
+    public RaceResultDateTime To { get; init; }
     public HistoryParticipantFilter? Participant { get; init; }
 }
 
@@ -724,15 +733,15 @@ public record EventListItem
     public bool CheckedOut { get; init; }
     public int Participants { get; init; }
     public string EventName { get; init; } = "";
-    public string EventDate { get; init; } = "";
-    public string EventDate2 { get; init; } = "";
+    public RaceResultDateTime EventDate { get; init; }
+    public RaceResultDateTime EventDate2 { get; init; }
     public int EventType { get; init; }
     public string EventLocation { get; init; } = "";
     public int EventCountry { get; init; }
-    public bool RegActive { get; set; }
-    public bool TestMode { get; set; }
+    public bool RegActive { get; init; }
+    public bool TestMode { get; init; }
     public int NotActivated { get; init; }
-    public string EventLogo { get; set; } = "";
+    public string EventLogo { get; init; } = "";
 }
 
 /// <summary>An event on a RACE RESULT server at the venue (<c>local/eventlist</c>).</summary>
@@ -743,7 +752,7 @@ public record LocalEventListItem
     /// <summary>The event file on the server (<c>.ses</c>).</summary>
     public string FileName { get; init; } = "";
     public string EventName { get; init; } = "";
-    public string EventDate { get; init; } = "";
+    public RaceResultDateTime EventDate { get; init; }
     public int EventType { get; init; }
     public bool CheckedOut { get; init; }
     public int Participants { get; init; }
@@ -768,8 +777,8 @@ public record Voucher
     public decimal Tax { get; init; }
     public int[]? Contests { get; init; }
     public string Category { get; init; } = "";
-    public string ValidUntil { get; init; } = "";
-    public string ValidFrom { get; init; } = "";
+    public RaceResultDateTime ValidUntil { get; init; }
+    public RaceResultDateTime ValidFrom { get; init; }
     public int Reusable { get; init; }
     public int UseCounter { get; init; }
     public string Remark { get; init; } = "";
@@ -875,6 +884,9 @@ public record TimingPoint
     public string Position { get; init; } = "";
     public int OrderPos { get; init; }
     public string Color { get; init; } = "";
+    /// <summary>The weakest signal (RSSI) a passing may have to count at this timing point.</summary>
+    [JsonPropertyName("MinRSSI")]
+    public int MinRssi { get; init; }
 }
 
 public record TimingPointRule
@@ -1037,10 +1049,14 @@ public record RegistrationRequestResponseRecord
     public bool HasDuplicate { get; init; }
 }
 
-/// <summary>go-model's <c>invoice.PaymentTerms</c>.</summary>
+/// <summary>
+/// go-model's <c>invoice.PaymentTerms</c>: RaceResult's invoice "Payment Terms". Invoices made during
+/// online registration take the online payment's terms instead of the event's.
+/// </summary>
 public record InvoicePaymentTerms
 {
-    public int Method { get; init; }
+    /// <summary>The payment method the terms belong to (the event's own terms have no field for it).</summary>
+    public PaymentMethod Method { get; init; }
     public string AccountOwner { get; init; } = "";
     [JsonPropertyName("IBAN")]
     public string Iban { get; init; } = "";
@@ -1051,8 +1067,10 @@ public record InvoicePaymentTerms
     public string BankName { get; init; } = "";
     [JsonPropertyName("MandateID")]
     public string MandateId { get; init; } = "";
+    /// <summary>"Payment Term (days)".</summary>
     public int DueDays { get; init; }
     public string Reference { get; init; } = "";
+    /// <summary>"Payment Term (text)", e.g. "14 days net".</summary>
     public string Terms { get; init; } = "";
 }
 
@@ -1069,7 +1087,7 @@ public record ArchiveEvent
     [JsonPropertyName("ID")]
     public string Id { get; init; } = "";
     public string Name { get; init; } = "";
-    public string Date { get; init; } = "";
+    public RaceResultDate Date { get; init; }
     public ArchiveContest[]? Contests { get; init; }
 }
 
@@ -1087,7 +1105,7 @@ public record ArchiveParticipant
     public string Lastname { get; init; } = "";
     public string Firstname { get; init; } = "";
     public string Sex { get; init; } = "";
-    public string DateOfBirth { get; init; } = "";
+    public RaceResultDate DateOfBirth { get; init; }
     public string Street { get; init; } = "";
     [JsonPropertyName("ZIP")]
     public string Zip { get; init; } = "";
@@ -1119,7 +1137,7 @@ public record ArchiveParticipation
 
 public record ArchiveParticipationExt
 {
-    public string EventDate { get; init; } = "";
+    public RaceResultDate EventDate { get; init; }
     public string EventName { get; init; } = "";
     public string ContestName { get; init; } = "";
     public string FinalTime { get; init; } = "";

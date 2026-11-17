@@ -54,16 +54,21 @@ public sealed class PublicEndpoints(ApiClient client)
                 .Add("addsettings", "EventName,EventDate,EventDate2,EventLocation,EventCountry,EventType,RegActive,TestMode,NotActivated,EventLogo"),
             ct);
 
-    /// <summary>Creates a new event and returns an <see cref="EventApiClient"/> for it.</summary>
+    /// <summary>
+    /// Creates a new event (online server only) and returns an <see cref="EventApiClient"/> for it.
+    /// <paramref name="copyMode"/> is go-webapi's <c>copyMode</c> (what to take over from
+    /// <paramref name="copyOf"/>); it comes last here so that existing positional calls keep their meaning.
+    /// </summary>
     public async Task<EventApiClient> CreateEventAsync(string name, DateTime date,
         int country = 0, int copyOf = 0, int templateId = 0, int mode = 0, int laps = 0,
-        CancellationToken ct = default)
+        int copyMode = 0, CancellationToken ct = default)
     {
         var q = new QueryParams()
             .Add("name", name)
             .Add("date", date)
             .Add("country", country)
             .Add("copyOf", copyOf)
+            .Add("copymode", copyMode)
             .Add("templateID", templateId)
             .Add("mode", mode)
             .Add("laps", laps);

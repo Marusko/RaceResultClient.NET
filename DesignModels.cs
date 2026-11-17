@@ -5,7 +5,7 @@ namespace RaceResultClient;
 
 // Ports of the go-model design-object packages (certificate, certificateset,
 // label, list, kiosk, emailtemplate, registration, statistic, page).
-// datetime.DateTime fields are mapped to string (non-ISO wire format),
+// datetime.DateTime fields are mapped to RaceResultDateTime,
 // decimal.Decimal to decimal, interface{} to JsonElement?, variant.VariantMap
 // to Dictionary<string, JsonElement>.
 
@@ -21,10 +21,34 @@ public enum PageSize
     Letter = 5, Legal = 6, A6 = 7, UserDefined = 8
 }
 
+public static class PageSizeExtensions
+{
+    /// <summary>
+    /// Width and height in mm, swapped for landscape (go-model's <c>page.Size.ToMM</c>);
+    /// <see cref="PageSize.UserDefined"/> has no size and gives (0, 0).
+    /// </summary>
+    public static (decimal Width, decimal Height) ToMm(this PageSize size, bool landscape)
+    {
+        var (w, h) = size switch
+        {
+            PageSize.A1 => (594m, 840m),
+            PageSize.A2 => (420m, 594m),
+            PageSize.A3 => (297m, 420m),
+            PageSize.A4 => (210m, 297m),
+            PageSize.A5 => (148m, 210m),
+            PageSize.A6 => (105m, 148m),
+            PageSize.Letter => (216m, 279m),
+            PageSize.Legal => (216m, 356m),
+            _ => (0m, 0m)
+        };
+        return landscape ? (h, w) : (w, h);
+    }
+}
+
 // ── certificate ───────────────────────────────────────────────────────────────
 
 /// <summary>certificate.PageSize — serialized as a string ("A4", "Letter", …).</summary>
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonConverter(typeof(CertificatePageSizeConverter))]
 public enum CertificatePageSize
 {
     A1 = 0, A2 = 1, A3 = 2, A4 = 3, A5 = 4,
@@ -32,8 +56,104 @@ public enum CertificatePageSize
 }
 
 /// <summary>certificate.PageFormat — serialized as a string ("Portrait"/"Landscape").</summary>
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonConverter(typeof(CertificatePageFormatConverter))]
 public enum CertificatePageFormat { Portrait = 0, Landscape = 1 }
+
+/// <summary>
+/// As go-model's <c>certificate.PageSize</c>: reads the name in any case, and any other text as
+/// <see cref="CertificatePageSize.UserDefined"/>; writes "A1"…"A6", "Letter", "Legal" or "UserDefined".
+/// </summary>
+public sealed class CertificatePageSizeConverter : JsonConverter<CertificatePageSize>
+{
+    public override CertificatePageSize Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Number) return (CertificatePageSize)reader.GetInt32();
+        if (reader.TokenType != JsonTokenType.String)
+            throw new JsonException($"A certificate page size is text, not {reader.TokenType}.");
+        return reader.GetString()?.ToUpperInvariant() switch
+        {
+            "A1" => CertificatePageSize.A1,
+            "A2" => CertificatePageSize.A2,
+            "A3" => CertificatePageSize.A3,
+            "A4" => CertificatePageSize.A4,
+            "A5" => CertificatePageSize.A5,
+            "A6" => CertificatePageSize.A6,
+            "LEGAL" => CertificatePageSize.Legal,
+            "LETTER" => CertificatePageSize.Letter,
+            _ => CertificatePageSize.UserDefined
+        };
+    }
+
+    public override void Write(Utf8JsonWriter writer, CertificatePageSize value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value switch
+        {
+            CertificatePageSize.A1 => "A1",
+            CertificatePageSize.A2 => "A2",
+            CertificatePageSize.A3 => "A3",
+            CertificatePageSize.A4 => "A4",
+            CertificatePageSize.A5 => "A5",
+            CertificatePageSize.A6 => "A6",
+            CertificatePageSize.Letter => "Letter",
+            CertificatePageSize.Legal => "Legal",
+            _ => "UserDefined"
+        });
+}
+
+/// <summary>
+/// As go-model's <c>certificate.PageFormat</c>: reads "portrait"/"landscape" in any case, and any other
+/// text as <see cref="CertificatePageFormat.Portrait"/> (go-model leaves the zero value).
+/// </summary>
+public sealed class CertificatePageFormatConverter : JsonConverter<CertificatePageFormat>
+{
+    public override CertificatePageFormat Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Number) return (CertificatePageFormat)reader.GetInt32();
+        if (reader.TokenType != JsonTokenType.String)
+            throw new JsonException($"A certificate page format is text, not {reader.TokenType}.");
+        return string.Equals(reader.GetString(), "landscape", StringComparison.OrdinalIgnoreCase)
+            ? CertificatePageFormat.Landscape
+            : CertificatePageFormat.Portrait;
+    }
+
+    public override void Write(Utf8JsonWriter writer, CertificatePageFormat value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value switch
+        {
+            CertificatePageFormat.Portrait => "Portrait",
+            CertificatePageFormat.Landscape => "Landscape",
+            _ => ""
+        });
+}
+
+public static class CertificatePageSizeExtensions
+{
+    /// <summary>The portrait height in mm (go-model's <c>certificate.PageSize.Height</c>); 0 for <see cref="CertificatePageSize.UserDefined"/>.</summary>
+    public static decimal Height(this CertificatePageSize size) => size switch
+    {
+        CertificatePageSize.A1 => 841m,
+        CertificatePageSize.A2 => 594m,
+        CertificatePageSize.A3 => 420m,
+        CertificatePageSize.A4 => 297m,
+        CertificatePageSize.A5 => 210m,
+        CertificatePageSize.A6 => 148m,
+        CertificatePageSize.Letter => 11 * 25.4m,
+        CertificatePageSize.Legal => 14 * 25.4m,
+        _ => 0m
+    };
+
+    /// <summary>The portrait width in mm (go-model's <c>certificate.PageSize.Width</c>); 0 for <see cref="CertificatePageSize.UserDefined"/>.</summary>
+    public static decimal Width(this CertificatePageSize size) => size switch
+    {
+        CertificatePageSize.A1 => 594m,
+        CertificatePageSize.A2 => 420m,
+        CertificatePageSize.A3 => 297m,
+        CertificatePageSize.A4 => 210m,
+        CertificatePageSize.A5 => 148m,
+        CertificatePageSize.A6 => 105m,
+        CertificatePageSize.Letter => 8.5m * 25.4m,
+        CertificatePageSize.Legal => 8.5m * 25.4m,
+        _ => 0m
+    };
+}
 
 public enum CertificateElementType
 {
@@ -92,6 +212,108 @@ public record Certificate
     [JsonPropertyName("Fields")]
     public CertificateElement[] Elements { get; init; } = [];
     public CertificateZone[] Zones { get; init; } = [];
+
+    /// <summary>The number of pages: the highest <see cref="CertificateElement.Page"/>, at least 1.</summary>
+    public int PageCount() => Elements.Aggregate(1, (c, e) => Math.Max(c, e.Page));
+
+    /// <summary>The width in mm, as printed (landscape swaps the page's sides).</summary>
+    public decimal GetWidth() => PageFormat == CertificatePageFormat.Landscape
+        ? (PageSize == CertificatePageSize.UserDefined ? PageHeight : PageSize.Height())
+        : (PageSize == CertificatePageSize.UserDefined ? PageWidth : PageSize.Width());
+
+    /// <summary>The height in mm, as printed (landscape swaps the page's sides).</summary>
+    public decimal GetHeight() => PageFormat == CertificatePageFormat.Landscape
+        ? (PageSize == CertificatePageSize.UserDefined ? PageWidth : PageSize.Width())
+        : (PageSize == CertificatePageSize.UserDefined ? PageHeight : PageSize.Height());
+
+    /// <summary>
+    /// Where the holes are punched, (x, y) in mm from the top left, for <see cref="Holes"/>:
+    /// 1 normal, 2 MTB, 3 duo (two chips), 4 single, 99 <see cref="SpecialHoles"/> ("x:y;x:y;…").
+    /// Empty for any other value (go-model's <c>Certificate.GetHoles</c>).
+    /// </summary>
+    public (decimal X, decimal Y)[] GetHoles()
+    {
+        var dest = new List<(decimal X, decimal Y)>();
+        void Add(decimal x, decimal y) => dest.Add((x, y));
+
+        var w = GetWidth();
+        var h = GetHeight();
+        decimal cl = CutLeft, ct = CutTop, cb = CutBottom, cr = CutRight;
+
+        switch (Holes)
+        {
+            case 1 or 2:
+                Add(cl + 9, ct + 9);
+                Add(w - cr - 9, ct + 9);
+                break;
+            case 3 or 4:
+                // lower chip
+                Add(cl + 30, h - cb - 9.5m);
+                Add(cl + 30, h - cb - 22);
+                Add(w - cr - 30, h - cb - 9.5m);
+                Add(w - cr - 30, h - cb - 22);
+
+                // upper chip
+                if (Holes == 3) // duo
+                {
+                    Add(cl + 30, h - cb - 41.5m);
+                    Add(cl + 30, h - cb - 54);
+                    Add(w - cr - 30, h - cb - 41.5m);
+                    Add(w - cr - 30, h - cb - 54);
+                }
+                break;
+        }
+
+        switch (Holes)
+        {
+            case 1: // normal
+                Add(cl + 9, h - cb - 9);
+                Add(w - cr - 9, h - cb - 9);
+                break;
+
+            case 2: // mtb
+                // go-model's decimal has 4 places, so its halving truncates there
+                var middle = cl + Math.Truncate((w - cl - cr) / 2 * 10000) / 10000;
+                Add(middle - 10, h - cb - 9);
+                Add(middle + 10, h - cb - 9);
+                break;
+
+            case 3: // duo: bib top holes, then bib bottom holes
+                Add(cl + 9, ct + 83 + 9);
+                Add(w - cr - 9, ct + 83 + 9);
+                Add(cl + 9, ct + 233 - 9);
+                Add(w - cr - 9, ct + 233 - 9);
+                break;
+
+            case 4: // single: bib top holes, then bib bottom holes
+                Add(cl + 9, ct + 85 + 9);
+                Add(w - cr - 9, ct + 85 + 9);
+                Add(cl + 9, ct + 265 - 9);
+                Add(w - cr - 9, ct + 265 - 9);
+                break;
+
+            case 99: // special
+                foreach (var s in SpecialHoles.Split(';'))
+                {
+                    var c = s.Split(':');
+                    if (c.Length < 2) continue;
+                    var x = ParseMm(c[0]);
+                    var y = ParseMm(c[1]);
+                    if (x <= 0 || y <= 0) continue;
+                    Add(cl + x, ct + y);
+                }
+                break;
+        }
+        return dest.ToArray();
+    }
+
+    // As go-model: an unreadable number is 0, a number keeps 4 decimal places.
+    private static decimal ParseMm(string s)
+        => double.TryParse(s.Trim(), System.Globalization.NumberStyles.Float,
+               System.Globalization.CultureInfo.InvariantCulture, out var f)
+           && double.IsFinite(f) && Math.Abs(f) < 1e15
+            ? Math.Round((decimal)f, 4, MidpointRounding.ToEven)
+            : 0m;
 }
 
 public record CertificateElement
@@ -279,7 +501,7 @@ public record List
     public bool ListHeaderFooterFontUnderlined { get; init; }
     public int ListHeaderFooterAlignment { get; init; }
     public string Remarks { get; init; } = "";
-    public string LastChange { get; init; } = "";
+    public RaceResultDateTime LastChange { get; init; }
     public string FooterText1 { get; init; } = "";
     public string FooterText2 { get; init; } = "";
     public string FooterText3 { get; init; } = "";
@@ -340,15 +562,35 @@ public record ListSelectorResult([property: JsonPropertyName("ResultID")] int Re
 
 // ── kiosk ─────────────────────────────────────────────────────────────────────
 
+/// <summary><see cref="Kiosk.TransponderMode"/>: what a kiosk does with a transponder already assigned to another participant.</summary>
+public enum KioskTransponderMode
+{
+    /// <summary>"Error on multiple assignment".</summary>
+    ErrorOnMultipleAssignment = 0,
+    /// <summary>"Delete existing assignment".</summary>
+    DeleteExistingAssignment = 1,
+    /// <summary>"Multiple Assignment allowed".</summary>
+    MultipleAssignmentAllowed = 2
+}
+
+/// <summary><see cref="Kiosk.AcceptedTransponders"/>: the kiosk's "Accepted Transponder-Codes".</summary>
+public enum KioskAcceptedTransponders
+{
+    /// <summary>"Any".</summary>
+    Any = 0,
+    /// <summary>"Only Transponder Codes in Chip-File".</summary>
+    OnlyInChipFile = 1
+}
+
 public record Kiosk
 {
     public string Name { get; init; } = "";
     public string Key { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
-    public int TransponderMode { get; init; }
-    public int AcceptedTransponders { get; init; }
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
+    public KioskTransponderMode TransponderMode { get; init; }
+    public KioskAcceptedTransponders AcceptedTransponders { get; init; }
     public bool IgnoreBibRanges { get; init; }
     public bool AutoFinish { get; init; }
     [JsonPropertyName("CSS")]
@@ -479,8 +721,8 @@ public record Registration
     public string ChangeKeySalt { get; init; } = "";
     public string Title { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public string TestModeKey { get; init; } = "";
     public string Type { get; init; } = "";
     public int GroupMin { get; init; }
@@ -516,8 +758,8 @@ public record RegistrationStep
     public int Id { get; init; }
     public string Title { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public RegistrationElement[] Elements { get; init; } = [];
     public string ButtonText { get; init; } = "";
 }
@@ -527,8 +769,8 @@ public record RegistrationElement
     public string Type { get; init; } = "";
     public string Label { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public RegistrationField? Field { get; init; }
     public string ShowIf { get; init; } = "";
     public int ShowIfMode { get; init; }
@@ -568,8 +810,8 @@ public record RegistrationValue
     public JsonElement? Value { get; init; }
     public string Label { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public int MaxCapacity { get; init; }
     public string ShowIf { get; init; } = "";
 }
@@ -601,11 +843,11 @@ public record RegistrationAfterSave
 public record RegistrationPaymentMethod
 {
     [JsonPropertyName("ID")]
-    public int Id { get; init; }
+    public PaymentMethod Id { get; init; }
     public string Label { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public string Filter { get; init; } = "";
 }
 
@@ -615,6 +857,9 @@ public record RegistrationErrorMessages
 {
     public string BeforRegStart { get; init; } = "";
     public string AfterRegEnd { get; init; } = "";
+    public string RegFull { get; init; } = "";
+    public string QueueFull { get; init; } = "";
+    public string ChangeNotAllowed { get; init; } = "";
 }
 
 // ── statistic ─────────────────────────────────────────────────────────────────
