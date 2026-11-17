@@ -16,7 +16,7 @@ public sealed class AgeGroupsEndpoints(EventApiClient e)
             new QueryParams().Add("contest", contest).Add("set", set).Add("name", name), ct);
 
     public Task<AgeGroup> GetOneAsync(int id, CancellationToken ct = default)
-        => e.GetAsync<AgeGroup>("agegroups/get", new QueryParams().Add("id", id), ct);
+        => e.GetOneAsync<AgeGroup>("agegroups/get", new QueryParams().Add("id", id), ct);
 
     public Task DeleteAsync(int id, int contest = 0, int set = 0, CancellationToken ct = default)
         => e.GetVoidAsync("agegroups/delete",
@@ -70,7 +70,7 @@ public sealed class ContestsEndpoints(EventApiClient e)
         => e.GetAsync<Contest[]>("contests/get", ct: ct);
 
     public Task<Contest> GetOneAsync(int id, CancellationToken ct = default)
-        => e.GetAsync<Contest>("contests/get", new QueryParams().Add("id", id), ct);
+        => e.GetOneAsync<Contest>("contests/get", new QueryParams().Add("id", id), ct);
 
     public Task DeleteAsync(int id, CancellationToken ct = default)
         => e.GetVoidAsync("contests/delete", new QueryParams().Add("id", id), ct);
@@ -87,7 +87,7 @@ public sealed class CustomFieldsEndpoints(EventApiClient e)
         => e.GetAsync<CustomField[]>("fields/get", ct: ct);
 
     public Task<CustomField> GetOneAsync(int id, CancellationToken ct = default)
-        => e.GetAsync<CustomField>("fields/get", new QueryParams().Add("id", id), ct);
+        => e.GetOneAsync<CustomField>("fields/get", new QueryParams().Add("id", id), ct);
 
     public Task DeleteAsync(int id, CancellationToken ct = default)
         => e.GetVoidAsync("fields/delete", new QueryParams().Add("id", id), ct);
@@ -175,7 +175,7 @@ public sealed class ExportersEndpoints(EventApiClient e)
         => e.GetAsync<Exporter[]>("exporters/get", ct: ct);
 
     public Task<Exporter> GetOneAsync(int id, CancellationToken ct = default)
-        => e.GetAsync<Exporter>("exporters/get", new QueryParams().Add("id", id), ct);
+        => e.GetOneAsync<Exporter>("exporters/get", new QueryParams().Add("id", id), ct);
 
     public Task DeleteAsync(int id, CancellationToken ct = default)
         => e.GetVoidAsync("exporters/delete", new QueryParams().Add("id", id), ct);
@@ -381,7 +381,7 @@ public sealed class RankingsEndpoints(EventApiClient e)
         => e.GetAsync<Ranking[]>("ranks/get", ct: ct);
 
     public Task<Ranking> GetOneAsync(int id, CancellationToken ct = default)
-        => e.GetAsync<Ranking>("ranks/get", new QueryParams().Add("id", id), ct);
+        => e.GetOneAsync<Ranking>("ranks/get", new QueryParams().Add("id", id), ct);
 
     public Task DeleteAsync(int id, CancellationToken ct = default)
         => e.GetVoidAsync("ranks/delete", new QueryParams().Add("id", id), ct);
@@ -505,7 +505,7 @@ public sealed class ResultsEndpoints(EventApiClient e)
                 .Add("onlyNoFormulas", onlyNoFormulas), ct);
 
     public Task<Result> GetOneAsync(int id, CancellationToken ct = default)
-        => e.GetAsync<Result>("results/get", new QueryParams().Add("id", id), ct);
+        => e.GetOneAsync<Result>("results/get", new QueryParams().Add("id", id), ct);
 
     public Task DeleteAsync(int id, CancellationToken ct = default)
         => e.GetVoidAsync("results/delete", new QueryParams().Add("id", id), ct);
@@ -578,7 +578,7 @@ public sealed class SplitsEndpoints(EventApiClient e)
         => e.GetAsync<Split[]>("splits/get", new QueryParams().Add("contest", contest), ct);
 
     public Task<Split> GetOneAsync(int id, CancellationToken ct = default)
-        => e.GetAsync<Split>("splits/get", new QueryParams().Add("id", id), ct);
+        => e.GetOneAsync<Split>("splits/get", new QueryParams().Add("id", id), ct);
 
     public Task DeleteAsync(IEnumerable<int> ids, CancellationToken ct = default)
         => e.GetVoidAsync("splits/delete", new QueryParams().AddArray("id", ids), ct);
@@ -595,7 +595,7 @@ public sealed class TeamScoresEndpoints(EventApiClient e)
         => e.GetAsync<TeamScore[]>("teamscores/get", ct: ct);
 
     public Task<TeamScore> GetOneAsync(int id, CancellationToken ct = default)
-        => e.GetAsync<TeamScore>("teamscores/get", new QueryParams().Add("id", id), ct);
+        => e.GetOneAsync<TeamScore>("teamscores/get", new QueryParams().Add("id", id), ct);
 
     public Task DeleteAsync(int id, CancellationToken ct = default)
         => e.GetVoidAsync("teamscores/delete", new QueryParams().Add("id", id), ct);
@@ -698,7 +698,7 @@ public sealed class TimingPointsEndpoints(EventApiClient e)
         => e.GetAsync<TimingPoint[]>("timingpoints/get", ct: ct);
 
     public Task<TimingPoint> GetOneAsync(string name, CancellationToken ct = default)
-        => e.GetAsync<TimingPoint>("timingpoints/get", new QueryParams().Add("name", name), ct);
+        => e.GetOneAsync<TimingPoint>("timingpoints/get", new QueryParams().Add("name", name), ct);
 
     public Task DeleteAsync(string name, CancellationToken ct = default)
         => e.GetVoidAsync("timingpoints/delete", new QueryParams().Add("name", name), ct);
@@ -715,7 +715,7 @@ public sealed class TimingPointRulesEndpoints(EventApiClient e)
         => e.GetAsync<TimingPointRule[]>("timingpointrules/get", ct: ct);
 
     public Task<TimingPointRule> GetOneAsync(int id, CancellationToken ct = default)
-        => e.GetAsync<TimingPointRule>("timingpointrules/get", new QueryParams().Add("id", id), ct);
+        => e.GetOneAsync<TimingPointRule>("timingpointrules/get", new QueryParams().Add("id", id), ct);
 
     public Task DeleteAsync(int id, CancellationToken ct = default)
         => e.GetVoidAsync("timingpointrules/delete", new QueryParams().Add("id", id), ct);

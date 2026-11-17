@@ -105,6 +105,24 @@ public sealed class EventApiClient
     internal Task<T> GetAsync<T>(string cmd, QueryParams? q = null, CancellationToken ct = default)
         => Client.GetAsync<T>(EventId, cmd, q, ct);
 
+    /// <summary>
+    /// One item of a <c>…/get</c> list asked for by its id or name. RaceResult answers some of them
+    /// (<c>contests/get?id=</c>) with the item and others (<c>teamscores/get?id=</c>,
+    /// <c>timingpoints/get?name=</c>) with a list of it; both are read, and an empty list is not found.
+    /// </summary>
+    internal async Task<T> GetOneAsync<T>(string cmd, QueryParams q, CancellationToken ct = default)
+    {
+        var item = await Client.GetAsync<JsonElement>(EventId, cmd, q, ct);
+        if (item.ValueKind == JsonValueKind.Array)
+        {
+            if (item.GetArrayLength() == 0)
+                throw Client.Error($"{typeof(T).Name} not found", 404);
+            item = item[0];
+        }
+        return item.Deserialize<T>(JsonOptions.Default)
+               ?? throw Client.Error($"{typeof(T).Name} not found", 404);
+    }
+
     internal Task GetVoidAsync(string cmd, QueryParams? q = null, CancellationToken ct = default)
         => Client.GetVoidAsync(EventId, cmd, q, ct);
 

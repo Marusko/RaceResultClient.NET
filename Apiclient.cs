@@ -137,11 +137,12 @@ public sealed class ApiClient : IDisposable
 
         // Try to extract a structured error message from the JSON body
         var message = TryParseErrorMessage(bytes) ?? response.ReasonPhrase ?? "Unknown error";
-        var statusCode = (int)response.StatusCode;
-
-        throw ErrorFactory?.Invoke(message, statusCode)
-              ?? new ApiException(message, statusCode);
+        throw Error(message, (int)response.StatusCode);
     }
+
+    /// <summary>The exception for an error: the caller's <see cref="ErrorFactory"/>, else an <see cref="ApiException"/>.</summary>
+    internal Exception Error(string message, int statusCode)
+        => ErrorFactory?.Invoke(message, statusCode) ?? new ApiException(message, statusCode);
 
     private static string? TryParseErrorMessage(byte[] bytes)
     {
