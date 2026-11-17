@@ -19,6 +19,7 @@ RaceResultClient.NET/
 ├── EventApiClient.cs         # Per-event facade; entry point for all event-scoped endpoints
 ├── EventEndpoints.cs         # Core event-scoped endpoint groups (participants, timing, etc.)
 ├── EventEndpointsDesign.cs   # Additional groups (archives, certificates, lists, labels, …)
+├── EventEndpointsWeb.cs      # Groups only RaceResult's own JS client has (table, presenters, invoices, site, …)
 ├── PublicAndGeneral.cs       # Server-level endpoints (login, event lifecycle, user rights)
 ├── Models.cs                 # Core request/response record types, enums and RaceResult's codes
 ├── DesignModels.cs           # Design-object models (certificate, label, list, kiosk, …)
@@ -31,7 +32,9 @@ RaceResultClient.NET/
 
 This client mirrors the official Go libraries [go-webapi](https://github.com/raceresult/go-webapi)
 and [go-model](https://github.com/raceresult/go-model): endpoint paths, query parameters and
-model fields track those repositories. Enums serialize numerically (as in Go's `encoding/json`),
+model fields track those repositories. Where they lack something, the library follows
+`raceresultJS.js`, the JavaScript client every RaceResult server serves to its own pages (the
+cloud's copy is the newest): that is where the endpoints marked "RaceResult's own JS client" come from. Enums serialize numerically (as in Go's `encoding/json`),
 except the certificate page-size/format enums which serialize as strings.
 
 Property names follow C# conventions (`Id`, `Url`, `Rssi`), but every property whose Go JSON name
@@ -156,6 +159,7 @@ using var client = new ApiClient("my-server.com");
 | `Public.CreateEventAsync` | Create a new event (online server only), optionally as a copy (`copyOf`, `copyMode`) |
 | `Public.DeleteEventAsync` | Permanently delete an event |
 | `Public.GetUserInfoAsync` | Get info about the authenticated user |
+| `Public.GetUserIdAsync` / `Public.GetEventListYearsAsync` | The user's id; the years they have events in |
 | `Public.TokenFromSessionAsync` | Exchange the session for an OAuth2 token |
 | `Public.GetUserRightsAsync` | List user access rights for an event |
 | `Public.SaveUserRightsAsync` | Grant/update user rights |
@@ -164,6 +168,8 @@ using var client = new ApiClient("my-server.com");
 | `General.GetAppVersionAsync` | Get server application version |
 | `General.TranslateAsync` | Translate field names or expressions |
 | `General.GetLangItemAsync` | Get a single translation string |
+| `General.GetCountriesAsync` / `General.GetCountryAsync` | RaceResult's countries; one by name, code or number |
+| `General.GetTranslationsAsync` | RaceResult's user interface texts in a language |
 | `Local.GetEventListAsync` | All events on a RACE RESULT server at the venue (no login) |
 
 ### Event-scoped (`ev.*`)
@@ -184,37 +190,43 @@ All groups below are properties on `EventApiClient`.
 | `CustomFields` | CRUD for custom participant fields |
 | `Data` | Query and transform participant data with filtering, sorting, pagination |
 | `Dependencies` | Inspect the field dependency tree and circular references |
-| `EmailTemplates` | CRUD for email/SMS templates; preview and send |
+| `EmailTemplates` | CRUD for email/SMS templates; preview and send; sending jobs (`Jobs`), SMTP check |
 | `EntryFees` | CRUD for entry fee tiers |
 | `Exporters` | CRUD and start/stop for data exporters |
-| `File` | File download/upload, activation, version, expression check, modjobid, ownership/rights |
+| `File` | File download/upload, activation, version, expression check, modjobid, ownership/rights, server and decoder time, plug-ins |
 | `Forwarding` | Manage and monitor live data forwarding |
 | `GroupTimes` | Read and save group start times / finish time limits |
-| `History` | Read, export and delete participant field history |
-| `Information` | Frequent first names, gender lookup, adding first names |
-| `Kiosks` | CRUD for kiosk configurations |
+| `History` | Read, export and delete participant field history; entry ids, revert |
+| `Information` | Frequent first names, gender lookup, adding first names; cities, ZIP codes, banks |
+| `Invoices` | Invoices: read, preview, create, credit notes, download; the invoice layout |
+| `Kiosks` | CRUD for kiosk configurations; forwarding to the online server |
 | `Labels` | CRUD for label designs; render PDF |
 | `Lists` | CRUD for list designs; render PDF/HTML/XML/JSON/CSV/XLSX/… |
 | `OverwriteValues` | Save, delete and count result overwrite values |
-| `Participants` | Full participant lifecycle: create, read, update, delete, import (incl. SES), bib management |
-| `Pictures` | Manage participant/event pictures and thumbnails |
+| `Participants` | Full participant lifecycle: create, read, update, delete, import (file, SES, rows, another event), search, bib management |
+| `Pictures` | Manage participant/event pictures and thumbnails; a folder as ZIP |
+| `Presenters` | CRUD for presenter (venue screen) designs |
 | `Rankings` | CRUD for ranking definitions |
-| `RawData` | Read, filter, export, copy/swap and delete raw timing data |
+| `RawData` | Read, filter, export, copy/swap and delete raw timing data; read intervals, move to another timing point |
 | `RawDataRules` | CRUD for raw data routing rules |
 | `Registrations` | Process submissions; CRUD for registration forms |
+| `RegistrationComponents` | CRUD for reusable registration form parts |
 | `Results` | CRUD for result column definitions |
-| `Settings` | Read, write and delete event settings by name |
+| `Settings` | Read, write and delete event settings by name, one as text; invoice settings; the event's location |
 | `SimpleApi` | CRUD for Simple API endpoint configurations |
 | `Splits` | CRUD for split/checkpoint definitions |
-| `Statistics` | CRUD for statistic definitions; render and compute pivots |
+| `Statistics` | CRUD for statistic definitions; render and compute pivots; per contest, per result, split read rates and min/max |
 | `Synchronization` | Check-out/check-in status (online server) |
+| `Table` | The event's lookup table (`TValue`) |
 | `TeamScores` | CRUD for team scoring definitions |
 | `TimingPoints` | CRUD for timing point definitions |
 | `TimingPointRules` | CRUD for timing point decoder routing rules |
 | `Times` | Submit passings, read/delete/copy/swap times, single-start, random and interpolated times |
+| `Triggers` | Create and delete push subscriptions |
 | `UserDefinedFields` | Read and overwrite user-defined formula fields |
 | `Vouchers` | CRUD for discount vouchers |
 | `WebHooks` | CRUD for webhook configurations |
+| `Websites` | The event's site on my.raceresult.com; its published lists and certificates |
 
 ---
 
@@ -340,21 +352,22 @@ it unchanged.
 
 go-model carries a few types that no go-webapi endpoint returns; this library ports them too, so a
 caller that meets them elsewhere (a web hook's body, a trigger subscription, a participant's payment
-JSON) does not have to write them itself:
+JSON) does not have to write them itself. Several of them have endpoints after all, in RaceResult's
+own JS client, and are read and saved by the groups named here:
 
 | Type | Where it comes from |
 |---|---|
 | `WebHookMessage` | the body a web hook posts to its `WebHook.Url` |
-| `TriggerSettings`, `TriggerType` | a push-trigger subscription |
+| `TriggerSettings`, `TriggerType` | a push-trigger subscription (`ev.Triggers` creates and deletes one) |
 | `OpData`, `OpDataPayment` | the parsed form of `Participant.Opjson` |
 | `RegistrationRequestResponse`, `RegistrationRequestResponseRecord`, `InvoicePaymentTerms` | the answer to a `RegistrationRequest` (`Registrations.ProcessAsync` returns the raw `JsonElement`; deserialize it into these) |
 | `RawDataReduced` | the short form of a raw-data entry, without the `Passing` |
-| `TableValue` | a row of the event file's generic lookup table |
+| `TableValue` | a row of the event file's generic lookup table (`ev.Table`) |
 | `ParticipantAndDummyCount` | a participant count split into real and dummy records |
 | `ArchiveEvent`, `ArchiveContest` | an archive's events and their contests |
-| `Website`, `WebsiteTab`, `WebsiteElement`, the `Website…Config` records, `WebsiteRegistrationConfig`, `WebsiteTrackingData`, … | the event site (go-model's `website`): its tabs, the participant view's elements, its registration overview and tracking map |
-| `Presenter`, `PresenterScreen`, `PresenterWindow`, … | a presenter's screens (go-model's `presenter`) |
-| `Invoice`, `InvoiceWithSum`, `InvoiceWithDetails`, `InvoiceSettings`, `InvoiceFilter`, … | invoices (go-model's `invoice`) |
+| `Website`, `WebsiteTab`, `WebsiteElement`, the `Website…Config` records, `WebsiteRegistrationConfig`, `WebsiteTrackingData`, … | the event site (go-model's `website`): its tabs, the participant view's elements, its registration overview and tracking map (`ev.Websites`) |
+| `Presenter`, `PresenterScreen`, `PresenterWindow`, … | a presenter's screens (go-model's `presenter`; `ev.Presenters`) |
+| `Invoice`, `InvoiceWithSum`, `InvoiceWithDetails`, `InvoiceSettings`, `InvoiceFilter`, … | invoices (go-model's `invoice`; `ev.Invoices`) |
 | `PayPayment`, `PayRegistration`, `PayMethod`, `PayCreateRequest`, `PayCaptureResponse`, … | RACE RESULT's online payment service (go-model's `pay`) |
 
 A tab's or element's `Config` is the raw `JsonElement`; deserialize it into the record its `Type`

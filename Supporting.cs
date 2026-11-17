@@ -44,6 +44,7 @@ public sealed class QueryParams
     public QueryParams Add(string key, RaceResultDateTime value) => Add(key, value.ToString());
 
     // Forced variants — emit the parameter even when the value is the type default.
+    public QueryParams AddAlways(string key, string value) { _params.Add((key, value)); return this; }
     public QueryParams AddAlways(string key, int value) => Add(key, value.ToString());
     public QueryParams AddAlways(string key, decimal value) => Add(key, value.ToString(CultureInfo.InvariantCulture));
     public QueryParams AddAlways(string key, double value) => Add(key, value.ToString("G", CultureInfo.InvariantCulture));

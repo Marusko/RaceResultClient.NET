@@ -65,6 +65,12 @@ public sealed class EventApiClient
     public UserDefinedFieldsEndpoints UserDefinedFields => new(this);
     public OverwriteValuesEndpoints OverwriteValues => new(this);
     public FileEndpoints File => new(this);
+    public TableEndpoints Table => new(this);
+    public PresentersEndpoints Presenters => new(this);
+    public RegistrationComponentsEndpoints RegistrationComponents => new(this);
+    public WebsitesEndpoints Websites => new(this);
+    public InvoicesEndpoints Invoices => new(this);
+    public TriggersEndpoints Triggers => new(this);
 
     // ── Low-level escape hatches ──────────────────────────────────────────────
 

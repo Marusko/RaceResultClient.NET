@@ -1242,3 +1242,107 @@ public record ArchiveParticipationExt
     public int AgRank { get; init; }
     public int Bib { get; init; }
 }
+
+// ── What RaceResult's own JS client reads, go-webapi has no endpoint for ─────
+
+/// <summary>A contest's read rates per split (<see cref="StatisticsEndpoints.SplitsReadRatesAsync"/>).</summary>
+public record SplitsReadRates
+{
+    [JsonPropertyName("ID")]
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public SplitReadRate[] Splits { get; init; } = [];
+}
+
+/// <summary>How many of a split's starters were read, by the main and the backup timing point, combined, or by hand.</summary>
+public record SplitReadRate
+{
+    public string Name { get; init; } = "";
+    public string Label { get; init; } = "";
+    public bool HasBackup { get; init; }
+    public int Starters { get; init; }
+    public int Main { get; init; }
+    public int Backup { get; init; }
+    public int Combined { get; init; }
+    public int Manual { get; init; }
+    public int Total { get; init; }
+}
+
+/// <summary>A contest's fastest and slowest times per split (<see cref="StatisticsEndpoints.SplitsMinMaxAsync"/>).</summary>
+public record SplitsMinMax
+{
+    [JsonPropertyName("ID")]
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public SplitMinMax[] Splits { get; init; } = [];
+}
+
+public record SplitMinMax
+{
+    public string Name { get; init; } = "";
+    public string Label { get; init; } = "";
+    public SplitSpeed PaceSpeedUnit { get; init; }
+    public decimal Distance { get; init; }
+    public decimal SectorDistance { get; init; }
+    public bool IsStart { get; init; }
+    public bool IsPreStart { get; init; }
+    public int Total { get; init; }
+    /// <summary>Time of day.</summary>
+    [JsonPropertyName("TOD")]
+    public MinMaxTimes? Tod { get; init; }
+    public MinMaxTimes? Gun { get; init; }
+    public MinMaxTimes? Chip { get; init; }
+    public MinMaxTimes? Sector { get; init; }
+}
+
+public record MinMaxTimes
+{
+    public MinMaxTime? MinTime { get; init; }
+    public MinMaxTime? MaxTime { get; init; }
+    public string MinPace { get; init; } = "";
+    public string MaxPace { get; init; } = "";
+}
+
+public record MinMaxTime
+{
+    public decimal DecimalTime { get; init; }
+    public decimal RoundedTime { get; init; }
+    public string TimeText { get; init; } = "";
+    public string InfoText { get; init; } = "";
+}
+
+/// <summary>Where the event takes place (<see cref="SettingsEndpoints.GeoCodeAsync"/>).</summary>
+public record GeoLocation(decimal Lat, decimal Lng);
+
+/// <summary>A country as RaceResult knows it (<see cref="GeneralEndpoints.GetCountryAsync"/>).</summary>
+public record CountryInfo
+{
+    public int IsoNo { get; init; }
+    public string Alpha2 { get; init; } = "";
+    public string Alpha3 { get; init; } = "";
+    [JsonPropertyName("IOCName")]
+    public string IocName { get; init; } = "";
+    [JsonPropertyName("UCIName")]
+    public string UciName { get; init; } = "";
+    /// <summary>The country's name in its own language.</summary>
+    public string Name { get; init; } = "";
+    /// <summary>The decimal separator.</summary>
+    public string DeciSep { get; init; } = "";
+    /// <summary>The telephone country code.</summary>
+    public string AreaCode { get; init; } = "";
+    public string Currency { get; init; } = "";
+    public string CurrencyName { get; init; } = "";
+    public string CurrencyFracName { get; init; } = "";
+    [JsonPropertyName("IsEU")]
+    public bool IsEu { get; init; }
+}
+
+/// <summary>One translated text of RaceResult's user interface (<see cref="GeneralEndpoints.GetTranslationsAsync"/>).</summary>
+public record Translation
+{
+    public string Key { get; init; } = "";
+    public string Value { get; init; } = "";
+    public string User { get; init; } = "";
+    [JsonPropertyName("TS")]
+    public DateTime Ts { get; init; }
+}

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 
 namespace RaceResultClient;
 
@@ -236,6 +237,52 @@ public sealed class EmailTemplatesEndpoints(EventApiClient e)
         CancellationToken ct = default)
         => e.GetVoidAsync("emailtemplates/send",
             new QueryParams().Add("name", name).Add("filter", filter).Add("lang", lang), ct);
+
+    // RaceResult's own JS client (not in go-webapi):
+
+    /// <summary>Sending jobs: emails sent in the background, which can be paused and resumed.</summary>
+    public EmailJobsEndpoints Jobs => new(e);
+
+    /// <summary>Encrypts an SMTP password the way the event's email settings keep it.</summary>
+    public Task<string> EncryptPasswordAsync(string password, CancellationToken ct = default)
+        => e.PostAsync<string>("emailtemplates/encryptpw", null, password, ct);
+
+    /// <summary>Tries an SMTP configuration (the event's email settings) and returns what the server found.</summary>
+    public Task<JsonElement> CheckSmtpConfigurationAsync(object configuration, CancellationToken ct = default)
+        => e.PostAsync<JsonElement>("emailtemplates/smtpconfigurationcheck", null, configuration, ct);
+}
+
+/// <summary>An event's email sending jobs (<c>emailtemplates/jobs/…</c>; RaceResult's own JS client).</summary>
+public sealed class EmailJobsEndpoints(EventApiClient e)
+{
+    /// <summary>The event's sending jobs (empty when there are none).</summary>
+    public Task<JsonElement> GetAsync(CancellationToken ct = default)
+        => e.GetAsync<JsonElement>("emailtemplates/jobs/get", ct: ct);
+
+    /// <summary>Starts sending a template to the participants matching the filter (at most <paramref name="limit"/>; 0 for all).</summary>
+    public Task<JsonElement> StartAsync(string name, string filter = "", string lang = "", int limit = 0,
+        string chargeToken = "", CancellationToken ct = default)
+        => e.PostAsync<JsonElement>("emailtemplates/jobs/start",
+            new QueryParams().Add("name", name).Add("filter", filter).Add("lang", lang).Add("limit", limit),
+            string.IsNullOrEmpty(chargeToken) ? null : new { ChargeToken = chargeToken }, ct);
+
+    public Task StopAsync(string id, CancellationToken ct = default)
+        => e.GetVoidAsync("emailtemplates/jobs/stop", new QueryParams().Add("id", id), ct);
+
+    public Task PauseAsync(string id, CancellationToken ct = default)
+        => e.GetVoidAsync("emailtemplates/jobs/pause", new QueryParams().Add("id", id), ct);
+
+    public Task ResumeAsync(string id, CancellationToken ct = default)
+        => e.GetVoidAsync("emailtemplates/jobs/resume", new QueryParams().Add("id", id), ct);
+
+    /// <summary>A job's results, from the given message on.</summary>
+    public Task<JsonElement> ResultsAsync(string id, int from = 0, CancellationToken ct = default)
+        => e.GetAsync<JsonElement>("emailtemplates/jobs/results", new QueryParams().Add("id", id).Add("from", from), ct);
+
+    /// <summary>One message a job sent.</summary>
+    public Task<JsonElement> MessageAsync(string id, int messageIndex, CancellationToken ct = default)
+        => e.GetAsync<JsonElement>("emailtemplates/jobs/message",
+            new QueryParams().Add("id", id).AddAlways("msgIndex", messageIndex), ct);
 }
 
 // ── GroupTimes ────────────────────────────────────────────────────────────────
@@ -267,6 +314,25 @@ public sealed class InformationEndpoints(EventApiClient e)
     public Task AddFirstNameAsync(string name, string sex, CancellationToken ct = default)
         => e.GetVoidAsync("information/addfirstname",
             new QueryParams().Add("name", name).Add("sex", sex), ct);
+
+    // RaceResult's own JS client (not in go-webapi). These read RaceResult's city and bank tables, which a
+    // server at the venue may lack ("open …Cities0.csv: The system cannot find the file specified").
+
+    /// <summary>The cities with this ZIP code in a country (ISO alpha-2, e.g. <c>"DE"</c>).</summary>
+    public Task<JsonElement> GetCitiesAsync(string zip, string country, CancellationToken ct = default)
+        => e.GetAsync<JsonElement>("information/getcities", new QueryParams().Add("zip", zip).Add("country", country), ct);
+
+    /// <summary>The city of a ZIP code.</summary>
+    public Task<string> GetCityAsync(string zip, string country, CancellationToken ct = default)
+        => e.GetAsync<string>("information/getcity", new QueryParams().Add("zip", zip).Add("country", country), ct);
+
+    /// <summary>The ZIP code of a city.</summary>
+    public Task<string> GetZipAsync(string city, string country, CancellationToken ct = default)
+        => e.GetAsync<string>("information/getzip", new QueryParams().Add("city", city).Add("country", country), ct);
+
+    /// <summary>The banks with this branch number (bank code) in a country.</summary>
+    public Task<JsonElement> GetBanksAsync(string branchNo, string country, CancellationToken ct = default)
+        => e.GetAsync<JsonElement>("information/getbanks", new QueryParams().Add("branchno", branchNo).Add("country", country), ct);
 }
 
 // ── Kiosks ────────────────────────────────────────────────────────────────────
@@ -295,6 +361,18 @@ public sealed class KiosksEndpoints(EventApiClient e)
 
     public Task NewAsync(string name, CancellationToken ct = default)
         => e.GetVoidAsync("kiosks/new", new QueryParams().Add("name", name), ct);
+
+    // RaceResult's own JS client (not in go-webapi): forwarding the event's kiosks to the online server.
+
+    public Task StartForwardingAsync(CancellationToken ct = default)
+        => e.GetVoidAsync("kiosks/forwarding/start", ct: ct);
+
+    /// <summary>The forwarding's state; an error ("kiosk forwarding not started") when it is not running.</summary>
+    public Task<JsonElement> ForwardingStatusAsync(CancellationToken ct = default)
+        => e.GetAsync<JsonElement>("kiosks/forwarding/status", ct: ct);
+
+    public Task StopForwardingAsync(CancellationToken ct = default)
+        => e.GetVoidAsync("kiosks/forwarding/stop", ct: ct);
 }
 
 // ── Labels ────────────────────────────────────────────────────────────────────
@@ -436,6 +514,10 @@ public sealed class PicturesEndpoints(EventApiClient e)
     public Task ImportAsync(string folder, string name, byte[] content, CancellationToken ct = default)
         => e.PostVoidAsync("pictures/import",
             new QueryParams().Add("folder", folder).Add("name", name), content, ct);
+
+    /// <summary>All pictures of a folder as one ZIP file (RaceResult's own JS client; not in go-webapi).</summary>
+    public Task<byte[]> GetAllAsync(string folder, CancellationToken ct = default)
+        => e.GetBytesAsync("pictures/getall", new QueryParams().Add("folder", folder), ct);
 }
 
 // ── RawDataRules ──────────────────────────────────────────────────────────────

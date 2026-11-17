@@ -1,4 +1,6 @@
-﻿namespace RaceResultClient;
+﻿using System.Text.Json;
+
+namespace RaceResultClient;
 
 // ── Public endpoints (login, event management, user rights) ───────────────────
 
@@ -85,6 +87,14 @@ public sealed class PublicEndpoints(ApiClient client)
     /// <summary>Returns the currently authenticated user's info.</summary>
     public Task<UserInfo> GetUserInfoAsync(CancellationToken ct = default)
         => client.GetAsync<UserInfo>(null, "public/userinfo", ct: ct);
+
+    /// <summary>The years the user has events in (RaceResult's own JS client; not in go-webapi).</summary>
+    public Task<int[]> GetEventListYearsAsync(CancellationToken ct = default)
+        => client.GetAsync<int[]>(null, "public/eventlist/years", ct: ct);
+
+    /// <summary>The logged-in user's id (customer number) (RaceResult's own JS client; not in go-webapi).</summary>
+    public Task<int> GetUserIdAsync(CancellationToken ct = default)
+        => client.GetAsync<int>(null, "public/userid", ct: ct);
 
     /// <summary>Exchanges the current session for an OAuth2 token.</summary>
     public Task<OAuthToken> TokenFromSessionAsync(CancellationToken ct = default)
@@ -173,4 +183,19 @@ public sealed class GeneralEndpoints(ApiClient client)
     public Task<string> GetLangItemAsync(string name, string lang, CancellationToken ct = default)
         => client.GetAsync<string>(null, "getlangitem",
             new QueryParams().Add("name", name).Add("lang", lang), ct);
+
+    // RaceResult's own JS client (not in go-webapi):
+
+    /// <summary>Every country RaceResult knows: its ISO number and its name in its own language.</summary>
+    public async Task<(int IsoNo, string Name)[]> GetCountriesAsync(CancellationToken ct = default)
+        => (await client.GetAsync<JsonElement[][]>(null, "information/countries", ct: ct))
+            .Select(r => (r[0].GetInt32(), r[1].GetString() ?? "")).ToArray();
+
+    /// <summary>A country found by its name, code or number.</summary>
+    public Task<CountryInfo> GetCountryAsync(string find, CancellationToken ct = default)
+        => client.GetAsync<CountryInfo>(null, "information/country", new QueryParams().Add("find", find), ct);
+
+    /// <summary>RaceResult's user interface texts in a language (e.g. <c>"de"</c>).</summary>
+    public Task<Translation[]> GetTranslationsAsync(string language, CancellationToken ct = default)
+        => client.GetAsync<Translation[]>(null, "gettranslations", new QueryParams().Add("language", language), ct);
 }

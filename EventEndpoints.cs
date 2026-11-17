@@ -10,10 +10,17 @@ public sealed class AgeGroupsEndpoints(EventApiClient e)
     public Task<byte[]> GetPdfAsync(CancellationToken ct = default)
         => e.GetBytesAsync("agegroups/pdf", ct: ct);
 
+    /// <summary>
+    /// The age groups, of one contest and set if given. <paramref name="generatePerContest"/> (RaceResult
+    /// 14.0.21 on) also returns, for a contest without age groups of its own, the general ones as its.
+    /// </summary>
     public Task<AgeGroup[]> GetAsync(int contest = 0, int set = 0, string name = "",
-        CancellationToken ct = default)
-        => e.GetAsync<AgeGroup[]>("agegroups/get",
-            new QueryParams().Add("contest", contest).Add("set", set).Add("name", name), ct);
+        bool generatePerContest = false, CancellationToken ct = default)
+    {
+        var q = new QueryParams().Add("contest", contest).Add("set", set).Add("name", name);
+        if (generatePerContest) q.Add("generatepercontest", "1");
+        return e.GetAsync<AgeGroup[]>("agegroups/get", q, ct);
+    }
 
     public Task<AgeGroup> GetOneAsync(int id, CancellationToken ct = default)
         => e.GetOneAsync<AgeGroup>("agegroups/get", new QueryParams().Add("id", id), ct);
@@ -227,6 +234,18 @@ public sealed class HistoryEndpoints(EventApiClient e)
         if (dateTo.HasValue) q.Add("dateTo", dateTo.Value);
         return q;
     }
+
+    // RaceResult's own JS client (not in go-webapi):
+
+    /// <summary>The ids of the history entries matching the filter (<paramref name="orderBy"/> e.g. <c>"DateTime DESC"</c>).</summary>
+    public Task<int[]> GetIdsAsync(HistoryFilter filter, int limit = 0, int offset = 0, string orderBy = "",
+        CancellationToken ct = default)
+        => e.PostAsync<int[]>("history/getids",
+            new QueryParams().Add("limit", limit).Add("offset", offset).Add("orderBy", orderBy), filter, ct);
+
+    /// <summary>Sets the fields of these history entries back to their old values.</summary>
+    public Task RevertAsync(IEnumerable<int> historyIds, CancellationToken ct = default)
+        => e.PostVoidAsync("history/revert", null, historyIds.ToArray(), ct);
 }
 
 // ── Participants ──────────────────────────────────────────────────────────────
@@ -371,6 +390,58 @@ public sealed class ParticipantsEndpoints(EventApiClient e)
         string filter = "", CancellationToken ct = default)
         => e.GetVoidAsync("part/clearbankinformation",
             id.ApplyTo(new QueryParams()).Add("contest", contest).Add("filter", filter), ct);
+
+    // RaceResult's own JS client (not in go-webapi):
+
+    /// <summary>Saves one field of one participant (by PID); the value is sent as text.</summary>
+    public Task SaveValueAsync(int pid, string fieldName, string value, bool noHistory = false,
+        CancellationToken ct = default)
+        => e.GetVoidAsync("part/savevalue",
+            new QueryParams().AddAlways("pid", pid).Add("fieldname", fieldName).AddAlways("value", value)
+                .Add("nohistory", noHistory ? "1" : "0"), ct);
+
+    /// <summary>Renumbers the participants' internal ids (PIDs).</summary>
+    public Task ResetIdsAsync(CancellationToken ct = default)
+        => e.GetVoidAsync("part/resetids", ct: ct);
+
+    /// <summary>The first free bib of a bib range (or the highest + 1).</summary>
+    public Task<int> FreeBibInRangeAsync(int rangeId, bool maxBibPlusOne = false, CancellationToken ct = default)
+        => e.GetAsync<int>("part/freebibinrange",
+            new QueryParams().AddAlways("rangeid", rangeId).Add("maxbibplus1", maxBibPlusOne ? "1" : "0"), ct);
+
+    /// <summary>The bib ranges a participant's contest may use.</summary>
+    public Task<BibRange[]> BibRangesAsync(int pid, CancellationToken ct = default)
+        => e.GetAsync<BibRange[]>("part/bibranges", new QueryParams().AddAlways("pid", pid), ct);
+
+    /// <summary>Participants whose name, bib, … matches the term, as rows of <paramref name="returnFields"/>.</summary>
+    public Task<JsonElement[][]> SearchAsync(string term, IEnumerable<string> returnFields, CancellationToken ct = default)
+        => e.GetAsync<JsonElement[][]>("part/search",
+            new QueryParams().Add("term", term).AddArray("returnFields", returnFields), ct);
+
+    /// <summary>
+    /// Imports rows of values (the first row the field names), as <see cref="ImportAsync"/> imports a file.
+    /// <paramref name="identityColumns"/> are the fields that find an existing participant.
+    /// </summary>
+    public Task<ImportResult> ImportMatrixAsync(IEnumerable<IEnumerable<object?>> rows,
+        bool addParticipants, bool updateParticipants, string colHandling = "", string identityColumns = "",
+        CancellationToken ct = default)
+        => e.PostAsync<ImportResult>("part/importMatrix",
+            new QueryParams()
+                .Add("addParticipants", addParticipants ? "1" : "0").Add("updateParticipants", updateParticipants ? "1" : "0")
+                .Add("colHandling", colHandling).Add("identityColumns", identityColumns),
+            rows.Select(r => r.ToArray()).ToArray(), ct);
+
+    /// <summary>Imports participants (and times, raw data) from another event on the same server.</summary>
+    public Task<ImportResult> ImportEventAsync(string eventId, string filter, string identity,
+        bool addParticipants, bool updateParticipants, int contestFrom, int contestTo,
+        int timesFrom, int timesTo, bool importRawData, CancellationToken ct = default)
+        => e.GetAsync<ImportResult>("part/importEvent",
+            new QueryParams()
+                .Add("eventID", eventId).Add("filter", filter).Add("identity", identity)
+                .Add("addParticipants", addParticipants ? "1" : "0").Add("updateParticipants", updateParticipants ? "1" : "0")
+                .Add("contestFrom", contestFrom).Add("contestTo", contestTo)
+                .Add("timesFrom", timesFrom).Add("timesTo", timesTo)
+                .Add("importRawData", importRawData ? "1" : "0"), ct);
 }
 
 // ── Rankings (server endpoint group: "ranks") ─────────────────────────────────
@@ -490,6 +561,26 @@ public sealed class RawDataEndpoints(EventApiClient e)
             new QueryParams()
                 .AddAlways(from.Key + "1", from.Value)
                 .AddAlways(to.Key + "2", to.Value), ct);
+
+    // RaceResult's own JS client (not in go-webapi):
+
+    /// <summary>
+    /// The intervals between a timing point's reads, as [count, seconds, seconds] rows, between two
+    /// quantiles of the reads (0–1; 0 for all).
+    /// </summary>
+    public Task<decimal[][]> GetIntervalsAsync(string timingPoint, decimal quantileStart = 0, decimal quantileEnd = 0,
+        CancellationToken ct = default)
+        => e.GetAsync<decimal[][]>("rawdata/getIntervals",
+            new QueryParams().Add("tpName", timingPoint).Add("quantileStart", quantileStart).Add("quantileEnd", quantileEnd), ct);
+
+    /// <summary>Moves the raw data matching the filters to another timing point.</summary>
+    public Task SetTimingPointBatchAsync(string filter, RawDataFilter? rdFilter, string timingPoint,
+        CancellationToken ct = default)
+    {
+        var q = new QueryParams().Add("filter", filter).Add("timingPoint", timingPoint);
+        if (rdFilter is not null) q.Add("rdFilter", JsonSerializer.Serialize(rdFilter, JsonOptions.Default));
+        return e.GetVoidAsync("rawdata/settimingpointbatch", q, ct);
+    }
 }
 
 // ── Results ───────────────────────────────────────────────────────────────────
@@ -550,10 +641,13 @@ public sealed class SettingsEndpoints(EventApiClient e)
     public Task SaveValueAsync(string name, object? value, CancellationToken ct = default)
         => SaveAsync(name, value, ct: ct);
 
-    /// <summary>Deletes a single setting (optionally linked to a contest/result).</summary>
+    /// <summary>
+    /// Deletes a single setting (optionally linked to a contest/result). Sent to <c>settings/deletesetting</c>,
+    /// as RaceResult's own client does: go-webapi's <c>settings/delete</c> is "command unknown" on 14.0.19.
+    /// </summary>
     public Task DeleteAsync(string name, int contest = 0, int result = 0,
         CancellationToken ct = default)
-        => e.GetVoidAsync("settings/delete",
+        => e.GetVoidAsync("settings/deletesetting",
             new QueryParams().Add("name", name).Add("contest", contest).Add("result", result), ct);
 
     /// <summary>The event's invoice settings, read from its <c>Invoice…</c> settings (not in go-webapi).</summary>
@@ -568,6 +662,22 @@ public sealed class SettingsEndpoints(EventApiClient e)
     public Task<string[]> NamesByPrefixAsync(string prefix, CancellationToken ct = default)
         => e.GetAsync<string[]>("settings/settingnamesbyprefix",
             new QueryParams().Add("prefix", prefix), ct);
+
+    // RaceResult's own JS client (not in go-webapi):
+
+    /// <summary>One setting's value as text (empty when not set).</summary>
+    public Task<string> GetSettingAsync(string name, int contest = 0, int result = 0, CancellationToken ct = default)
+        => e.GetAsync<string>("settings/getsetting",
+            new QueryParams().Add("simple", "1").Add("name", name).Add("contest", contest).Add("result", result), ct);
+
+    /// <summary>Saves one setting's value as text.</summary>
+    public Task SaveSettingAsync(string name, string value, int contest = 0, int result = 0, CancellationToken ct = default)
+        => e.PostVoidAsync("settings/savesetting",
+            new QueryParams().Add("name", name).Add("contest", contest).Add("result", result), value, ct);
+
+    /// <summary>Where the event takes place, from its location setting.</summary>
+    public Task<GeoLocation> GeoCodeAsync(CancellationToken ct = default)
+        => e.GetAsync<GeoLocation>("settings/geocode", ct: ct);
 }
 
 // ── Splits ────────────────────────────────────────────────────────────────────
@@ -825,6 +935,33 @@ public sealed class StatisticsEndpoints(EventApiClient e)
             new QueryParams()
                 .Add("row", row).Add("col", col).Add("filter", filter).Add("field", field)
                 .AddAlways("aggregation", (int)aggregation), ct);
+
+    // RaceResult's own JS client (not in go-webapi):
+
+    /// <summary>Participants per contest: male/female, adults/children, mean age, finished, and per result.</summary>
+    public Task<ContestStatistics[]> ContestStatisticsAsync(int contest = 0, int result = 0, string filter = "",
+        CancellationToken ct = default)
+        => e.GetAsync<ContestStatistics[]>("statistics/conteststatistic",
+            new QueryParams().Add("contest", contest).Add("result", result).Add("filter", filter), ct);
+
+    /// <summary>Participants with a time per result, by result id.</summary>
+    public Task<Dictionary<string, JsonElement>> ResultStatisticsAsync(int contest = 0, string filter = "",
+        CancellationToken ct = default)
+        => e.GetAsync<Dictionary<string, JsonElement>>("statistics/resultstatistic",
+            new QueryParams().Add("contest", contest).Add("filter", filter), ct);
+
+    /// <summary>Times statistics in the given format (RaceResult 14.0.21 on).</summary>
+    public Task<byte[]> TimeStatisticsAsync(string filter = "", string format = "", CancellationToken ct = default)
+        => e.GetBytesAsync("statistics/timestatistic",
+            new QueryParams().Add("filter", filter).Add("format", format), ct);
+
+    /// <summary>Per contest and split: how many starters were read, by which timing point.</summary>
+    public Task<SplitsReadRates[]> SplitsReadRatesAsync(string filter = "", CancellationToken ct = default)
+        => e.GetAsync<SplitsReadRates[]>("statistics/splitsreadrates", new QueryParams().Add("filter", filter), ct);
+
+    /// <summary>Per contest and split: the fastest and slowest times.</summary>
+    public Task<SplitsMinMax[]> SplitsMinMaxAsync(string filter = "", CancellationToken ct = default)
+        => e.GetAsync<SplitsMinMax[]>("statistics/splitsminmax", new QueryParams().Add("filter", filter), ct);
 }
 
 // ── Forwarding ────────────────────────────────────────────────────────────────
@@ -980,4 +1117,34 @@ public sealed class FileEndpoints(EventApiClient e)
     /// <summary>Returns the user rights code for this event (online server only).</summary>
     public Task<string> RightsAsync(CancellationToken ct = default)
         => e.GetAsync<string>("file/rights", ct: ct);
+
+    // RaceResult's own JS client (not in go-webapi):
+
+    /// <summary>How many participants matching the filter have been activated; null when none were.</summary>
+    public Task<int?> ActivationCounterAsync(string filter = "", CancellationToken ct = default)
+        => e.GetAsync<int?>("file/activationcounter", new QueryParams().Add("filter", filter), ct);
+
+    /// <summary>The highest modification job id of all the event's settings.</summary>
+    public Task<int> ModJobIdAllSettingsAsync(CancellationToken ct = default)
+        => e.GetAsync<int>("file/modjobidallsettings", ct: ct);
+
+    /// <summary>The event's plug-ins, by name.</summary>
+    public Task<Dictionary<string, JsonElement>> PlugInsAsync(CancellationToken ct = default)
+        => e.GetAsync<Dictionary<string, JsonElement>>("file/plugins", ct: ct);
+
+    /// <summary>The event file's customer and checksum (<c>"&lt;customer&gt;_&lt;md5&gt;"</c>).</summary>
+    public Task<string> CustMd5Async(CancellationToken ct = default)
+        => e.GetAsync<string>("file/custmd5", ct: ct);
+
+    /// <summary>The server's time of day, in seconds.</summary>
+    public Task<decimal> ServerTimeAsync(CancellationToken ct = default)
+        => e.GetAsync<decimal>("file/servertime", ct: ct);
+
+    /// <summary>The time the decoders are set to, as text; empty when none was set.</summary>
+    public Task<string> DecoderTimeAsync(CancellationToken ct = default)
+        => e.GetAsync<string>("file/decodertime", ct: ct);
+
+    /// <summary>Sets the time the decoders are given.</summary>
+    public Task SetDecoderTimeAsync(string time, CancellationToken ct = default)
+        => e.GetVoidAsync("file/setdecodertime", new QueryParams().Add("time", time), ct);
 }
