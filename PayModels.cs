@@ -34,14 +34,14 @@ public record Invoice
     public int Id { get; init; }
     public string Number { get; init; } = "";
     public string ReceiverReference { get; init; } = "";
-    public string Date { get; init; } = "";
+    public RaceResultDate Date { get; init; }
     [JsonPropertyName("PID")]
     public int Pid { get; init; }
     public InvoiceParty Receiver { get; init; } = new();
     public InvoiceParty Issuer { get; init; } = new();
     public string Currency { get; init; } = "";
     public string LegalNotes { get; init; } = "";
-    public string PerformanceDate { get; init; } = "";
+    public RaceResultDate PerformanceDate { get; init; }
     public string EInvoice { get; init; } = "";
     public InvoicePaymentTerms PaymentTerms { get; init; } = new();
     public DateTime Sent { get; init; }
@@ -100,15 +100,31 @@ public record InvoiceWithDetails : Invoice
     public decimal NetSum { get; init; }
 }
 
-/// <summary>How an event makes its invoices (go-model's <c>invoice.Settings</c>).</summary>
+/// <summary>
+/// How an event makes its invoices (go-model's <c>invoice.Settings</c>; RaceResult's invoice settings).
+/// The event stores them as separate settings named <c>Invoice…</c>: <c>InvoiceNumberScheme</c>,
+/// <c>InvoiceIssuerCompany</c> … <c>InvoiceIssuerVATID</c>, <c>InvoiceReceiverFieldCompany</c> …,
+/// <c>InvoicePaymentTermsIBAN</c> …, <c>InvoicePaymentTermsDueDays</c>, <c>InvoicePaymentTerms</c>
+/// (the terms' text) and <c>InvoiceExcludedEntryFees</c> (text).
+/// </summary>
 public record InvoiceSettings
 {
+    /// <summary>"First Invoice Number"; <c>[yyyy]</c> is the current year, e.g. <c>[yyyy]0001</c>.</summary>
     public string NumberScheme { get; init; } = "";
+    /// <summary>"Legal Notes" (company registration ID, CEO, …).</summary>
     public string LegalNotes { get; init; } = "";
-    public string PerformanceDate { get; init; } = "";
+    /// <summary>"Performance Date", when it is not the event date.</summary>
+    public RaceResultDate PerformanceDate { get; init; }
+    /// <summary>"E-Invoice Format"; empty for none.</summary>
     public string EInvoice { get; init; } = "";
+    /// <summary>"Participants grouping: Filter": invoices only for participants who meet it.</summary>
     public string ReceiverFilter { get; init; } = "";
+    /// <summary>
+    /// "Participants grouping: Grouping Field": other participants with the same value in this field are
+    /// added to the invoice (e.g. a corporate run with an extra participant for the company registration).
+    /// </summary>
     public string ReceiverMergeField { get; init; } = "";
+    /// <summary>"Invoice Receiver": the participant fields the receiver's data is taken from (e.g. <c>CLUB</c>).</summary>
     public string ReceiverFieldCompany { get; init; } = "";
     public string ReceiverFieldName { get; init; } = "";
     public string ReceiverFieldAddressLine1 { get; init; } = "";
@@ -118,13 +134,17 @@ public record InvoiceSettings
     public string ReceiverFieldZip { get; init; } = "";
     public string ReceiverFieldState { get; init; } = "";
     public string ReceiverFieldCountry { get; init; } = "";
+    /// <summary>The field for "Customer's Order Reference".</summary>
     public string ReceiverFieldReference { get; init; } = "";
     [JsonPropertyName("ReceiverFieldTaxID")]
     public string ReceiverFieldTaxId { get; init; } = "";
     [JsonPropertyName("ReceiverFieldVATID")]
     public string ReceiverFieldVatId { get; init; } = "";
+    /// <summary>"Invoice Issuer": fixed values.</summary>
     public InvoiceParty Issuer { get; init; } = new();
+    /// <summary>"Payment Terms" for invoices made by hand.</summary>
     public InvoicePaymentTerms PaymentTerms { get; init; } = new();
+    /// <summary>"Exclude Entry Fees": the IDs of entry fees left off invoices.</summary>
     public int[]? ExcludedEntryFees { get; init; }
 }
 
@@ -142,49 +162,89 @@ public record InvoiceFilter
 
 // ── pay ───────────────────────────────────────────────────────────────────────
 
-/// <summary>RACE RESULT's payment methods (go-model's <c>pay.Pm…</c> constants).</summary>
+/// <summary>
+/// RACE RESULT's payment methods (go-model's <c>pay.Pm…</c> constants), named as RaceResult's
+/// registration settings list them ("Payment Method"). Used by <see cref="RegistrationPaymentMethod.Id"/>,
+/// <see cref="InvoicePaymentTerms.Method"/> and the pay records. "Your Own …" is the organizer's own
+/// account with that provider.
+/// </summary>
 public enum PaymentMethod
 {
+    /// <summary>No payment (go-model's <c>PmNoPayment</c>).</summary>
     NoPayment = 0,
-    /// <summary>Credit card, EUR.</summary>
-    CcEur = 2,
-    /// <summary>Credit card, CHF.</summary>
-    CcChf = 3,
-    UebD = 4,
-    Bar = 5,
-    Spf = 6,
-    /// <summary>PayPal, EUR.</summary>
-    PPalEur = 7,
-    UebCh = 8,
-    EinzCh = 10,
+    /// <summary>Credit Card EUR (Visa/Master) (<c>PmCCEUR</c>).</summary>
+    CreditCardEur = 2,
+    /// <summary>Credit Card CHF (Visa/Master) (<c>PmCCCHF</c>).</summary>
+    CreditCardChf = 3,
+    /// <summary>Money Transfer (to European bank account) (<c>PmUEBD</c>).</summary>
+    MoneyTransferEuropean = 4,
+    /// <summary>Pay in cash at the event (<c>PmBAR</c>).</summary>
+    CashAtEvent = 5,
+    /// <summary>Swiss PostFinance (<c>PmSPF</c>).</summary>
+    SwissPostFinance = 6,
+    /// <summary>PayPal (EUR) (<c>PmPPalEUR</c>).</summary>
+    PayPalEur = 7,
+    /// <summary>Money Transfer (to Swiss bank account) (<c>PmUEBCH</c>).</summary>
+    MoneyTransferSwiss = 8,
+    /// <summary>Swiss Payment Order (<c>PmEINZCH</c>).</summary>
+    SwissPaymentOrder = 10,
+    /// <summary>go-model's <c>PmUEBSOF</c>; not offered in RaceResult's list any more.</summary>
     UebSof = 12,
-    /// <summary>PayPal, GBP.</summary>
-    PPalGbp = 14,
-    /// <summary>PayPal, USD.</summary>
-    PPalUsd = 15,
-    Sepa = 16,
-    /// <summary>Credit card, GBP.</summary>
-    CcGbp = 17,
-    SepaData = 19,
+    /// <summary>PayPal (GBP) (<c>PmPPalGBP</c>).</summary>
+    PayPalGbp = 14,
+    /// <summary>PayPal (USD) (<c>PmPPalUSD</c>); not offered in RaceResult's list any more.</summary>
+    PayPalUsd = 15,
+    /// <summary>SEPA Direct Debit (EUR) (<c>PmSEPA</c>).</summary>
+    SepaDirectDebit = 16,
+    /// <summary>Credit Card GBP (Visa/Master) (<c>PmCCGBP</c>).</summary>
+    CreditCardGbp = 17,
+    /// <summary>SEPA Direct Debit (collect data only) (<c>PmSEPADATA</c>).</summary>
+    SepaDirectDebitDataOnly = 19,
+    /// <summary>Your Own EPay Account (<c>PmOwnEPAY</c>).</summary>
     OwnEPay = 20,
-    OwnPPal = 21,
-    OwnWireT = 22,
+    /// <summary>Your Own PayPal Account (<c>PmOwnPPal</c>).</summary>
+    OwnPayPal = 21,
+    /// <summary>Wire Transfer to Race Director Bank Account (<c>PmOwnWireT</c>).</summary>
+    OwnWireTransfer = 22,
+    /// <summary>Your Own PaysBuy Account (in RaceResult's list, not in go-model).</summary>
+    OwnPaysBuy = 24,
+    /// <summary>go-model's <c>PmOwnPaytrail</c>; RaceResult's list offers only <see cref="OwnPaytrailV2"/>.</summary>
     OwnPaytrail = 25,
+    /// <summary>Your Own OnePAY Account (<c>PmOwnOnePAY</c>).</summary>
     OwnOnePay = 26,
-    Telr = 27,
-    OwnOnePayDom = 28,
-    Fatora = 29,
+    /// <summary>Your Own Telr Account (Auth+Capture) (<c>PmTelr</c>).</summary>
+    OwnTelr = 27,
+    /// <summary>Your Own OnePAY Domestic Account (<c>PmOwnOnePAYDom</c>).</summary>
+    OwnOnePayDomestic = 28,
+    /// <summary>Your Own Fatora Account (<c>PmFatora</c>).</summary>
+    OwnFatora = 29,
+    /// <summary>TWINT (CHF) (<c>PmTwint</c>).</summary>
     Twint = 30,
-    StripeCard = 31,
+    /// <summary>Your Own Stripe Account (<c>PmStripeCard</c>).</summary>
+    OwnStripe = 31,
+    /// <summary>Your Own Paytrail Account V2 (<c>PmOwnPaytrailV2</c>).</summary>
     OwnPaytrailV2 = 32,
-    TelrSale = 33,
-    RedSys = 34,
-    MollieBancontact = 35,
-    PayTabs = 36,
-    AsiaPay = 37,
-    MercadoPago = 38,
-    Xendit = 41,
-    TazaPay = 42,
+    /// <summary>Your Own Telr Account (Sale) (<c>PmTelrSale</c>).</summary>
+    OwnTelrSale = 33,
+    /// <summary>Your Own RedSys Account (<c>PmRedSys</c>).</summary>
+    OwnRedSys = 34,
+    /// <summary>Your Own Mollie Account for Bancontact (<c>PmMollieBancontact</c>).</summary>
+    OwnMollieBancontact = 35,
+    /// <summary>Your Own PayTabs Account (<c>PmPayTabs</c>).</summary>
+    OwnPayTabs = 36,
+    /// <summary>Your Own AsiaPay Account (<c>PmAsiaPay</c>).</summary>
+    OwnAsiaPay = 37,
+    /// <summary>Your Own MercadoPago Account (<c>PmMercadoPago</c>).</summary>
+    OwnMercadoPago = 38,
+    /// <summary>Your Own Peach Payments Account (in RaceResult's list, not in go-model).</summary>
+    OwnPeachPayments = 39,
+    /// <summary>Your Own Przelewy24 Account (in RaceResult's list, not in go-model).</summary>
+    OwnPrzelewy24 = 40,
+    /// <summary>Your Own Xendit Account (<c>PmXendit</c>).</summary>
+    OwnXendit = 41,
+    /// <summary>Your Own Tazapay Account (<c>PmTazaPay</c>).</summary>
+    OwnTazaPay = 42,
+    /// <summary>go-model's <c>PmCB</c>; not in RaceResult's list.</summary>
     Cb = 99
 }
 

@@ -29,7 +29,19 @@ public sealed class QueryParams
     public QueryParams Add(string key, bool value) => Add(key, value ? "true" : "false");
     public QueryParams Add(string key, double value) => value != 0 ? Add(key, value.ToString("G", CultureInfo.InvariantCulture)) : this;
     public QueryParams Add(string key, decimal value) => value != 0 ? Add(key, value.ToString(CultureInfo.InvariantCulture)) : this;
-    public QueryParams Add(string key, DateTime value) => Add(key, value.ToString("o", CultureInfo.InvariantCulture));
+    /// <summary>
+    /// A point in time, as go-webapi sends a <c>time.Time</c>: RFC 3339 with the zone's offset
+    /// (<c>2025-06-01T00:00:00+02:00</c>). A <see cref="DateTimeKind.Unspecified"/> value is local time.
+    /// </summary>
+    public QueryParams Add(string key, DateTime value)
+    {
+        var instant = value.Kind == DateTimeKind.Utc ? new DateTimeOffset(value, TimeSpan.Zero) : new DateTimeOffset(value);
+        return Add(key, instant.ToString("yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture)
+                        + RaceResultDateTime.FormatOffset(instant.Offset));
+    }
+
+    /// <summary>go-model's date/time text; left out when not set (as an empty string is).</summary>
+    public QueryParams Add(string key, RaceResultDateTime value) => Add(key, value.ToString());
 
     // Forced variants — emit the parameter even when the value is the type default.
     public QueryParams AddAlways(string key, int value) => Add(key, value.ToString());
@@ -111,5 +123,7 @@ public readonly struct Identifier
     /// <summary>Address participant by internal ID.</summary>
     public static Identifier Id(int id) => new("id", id);
 
-    internal QueryParams ApplyTo(QueryParams q) => q.AddAlways(Key, Value);
+    internal QueryParams ApplyTo(QueryParams q) => Key is null
+        ? throw new ArgumentException("An Identifier is made with Identifier.Bib, Identifier.Pid or Identifier.Id, not default.")
+        : q.AddAlways(Key, Value);
 }

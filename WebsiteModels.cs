@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -7,10 +6,9 @@ namespace RaceResultClient;
 // Ports of go-model's website and presenter packages: the event site (my.raceresult.com) with its
 // tabs, the participant view's elements, the site's registration overview, and the presenter screens.
 // No go-webapi endpoint returns them; they come from the event's settings or RaceResult's other services.
-// Same mapping as the other models: datetime.DateTime → string, date.Date → string,
-// time.Time → DateTime, json.RawMessage / interface{} → JsonElement?, variant.VariantMap →
-// Dictionary<string, JsonElement>. Text fields whose values are a known set keep named string
-// constants (WebsiteTabTypes, WebsiteElementTypes, …), since a value outside the set is still valid text.
+// Same mapping as the other models (see Models.cs). Text fields whose values are a known set are
+// string-backed value types (WebsiteTabType, WebsiteElementType, …): typed, with the known values as
+// static members, and a value RaceResult adds later still round-trips.
 
 // ── website ───────────────────────────────────────────────────────────────────
 
@@ -31,8 +29,8 @@ public record Website
     public string AdditionalCode { get; init; } = "";
     public WebsiteAdditionalFeature[]? AdditionalFeatures { get; init; }
     public string BrandColorDark { get; init; } = "";
-    /// <summary><see cref="WebsiteApplyContestColor.Yes"/> or empty.</summary>
-    public string ApplyContestColor { get; init; } = "";
+    /// <summary></summary>
+    public WebsiteApplyContestColor ApplyContestColor { get; init; }
     public string PortalTestKey { get; init; } = "";
     /// <summary>The minimum age (0–21) for comments on the participant view.</summary>
     public int CommentsMinimumAge { get; init; }
@@ -46,9 +44,22 @@ public record Website
 }
 
 /// <summary><see cref="Website.ApplyContestColor"/>'s value (go-model's <c>ApplyContestColorYes</c>).</summary>
-public static class WebsiteApplyContestColor
+[JsonConverter(typeof(StringValueConverter<WebsiteApplyContestColor>))]
+public readonly struct WebsiteApplyContestColor(string value) : IStringValue<WebsiteApplyContestColor>, IEquatable<WebsiteApplyContestColor>
 {
-    public const string Yes = "yes";
+    public static readonly WebsiteApplyContestColor No = new("");
+    public static readonly WebsiteApplyContestColor Yes = new("yes");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteApplyContestColor From(string value) => new(value);
+    public static implicit operator WebsiteApplyContestColor(string value) => new(value);
+    public bool Equals(WebsiteApplyContestColor other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteApplyContestColor o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteApplyContestColor a, WebsiteApplyContestColor b) => a.Equals(b);
+    public static bool operator !=(WebsiteApplyContestColor a, WebsiteApplyContestColor b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 /// <summary>The home tab of an event site (go-model's <c>website.HomeTab</c>).</summary>
@@ -65,19 +76,30 @@ public record WebsiteHomeTab
 
 public record WebsiteAdditionalFeature
 {
-    /// <summary>One of <see cref="WebsiteAdditionalFeatureTypes"/>.</summary>
-    public string Type { get; init; } = "";
+    public WebsiteAdditionalFeatureType Type { get; init; }
     [JsonPropertyName("ID")]
     public string Id { get; init; } = "";
     public bool Active { get; init; }
 }
 
 /// <summary><see cref="WebsiteAdditionalFeature.Type"/>'s values.</summary>
-public static class WebsiteAdditionalFeatureTypes
+[JsonConverter(typeof(StringValueConverter<WebsiteAdditionalFeatureType>))]
+public readonly struct WebsiteAdditionalFeatureType(string value) : IStringValue<WebsiteAdditionalFeatureType>, IEquatable<WebsiteAdditionalFeatureType>
 {
-    public const string None = "";
-    public const string GoogleAnalytics = "GoogleAnalytics";
-    public const string MetaPixel = "MetaPixel";
+    public static readonly WebsiteAdditionalFeatureType None = new("");
+    public static readonly WebsiteAdditionalFeatureType GoogleAnalytics = new("GoogleAnalytics");
+    public static readonly WebsiteAdditionalFeatureType MetaPixel = new("MetaPixel");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteAdditionalFeatureType From(string value) => new(value);
+    public static implicit operator WebsiteAdditionalFeatureType(string value) => new(value);
+    public bool Equals(WebsiteAdditionalFeatureType other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteAdditionalFeatureType o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteAdditionalFeatureType a, WebsiteAdditionalFeatureType b) => a.Equals(b);
+    public static bool operator !=(WebsiteAdditionalFeatureType a, WebsiteAdditionalFeatureType b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 public record WebsiteCompany
@@ -104,67 +126,88 @@ public record WebsiteTab
     public bool Enabled { get; init; }
     /// <summary>Whether the tab is in the menu when <see cref="ShowInMenu2"/> is <see cref="WebsiteShowInMenu.Default"/>.</summary>
     public bool ShowInMenu { get; init; }
-    /// <summary>One of <see cref="WebsiteShowInMenu"/>.</summary>
-    public string ShowInMenu2 { get; init; } = "";
-    public string ActiveFrom { get; init; } = "";
-    public string ActiveUntil { get; init; } = "";
-    /// <summary>One of <see cref="WebsiteTabTypes"/>.</summary>
-    public string Type { get; init; } = "";
+    public WebsiteShowInMenu ShowInMenu2 { get; init; }
+    public RaceResultDateTime ActiveFrom { get; init; }
+    public RaceResultDateTime ActiveUntil { get; init; }
+    public WebsiteTabType Type { get; init; }
     public JsonElement? Config { get; init; }
 
     /// <summary>
     /// False when <paramref name="t"/> is before <see cref="ActiveFrom"/> or after <see cref="ActiveUntil"/>
-    /// (an empty bound does not limit). As in go-model, a bound without a zone is read in
-    /// <paramref name="t"/>'s zone, and a <paramref name="t"/> of <see cref="DateTimeKind.Unspecified"/>
-    /// in the bound's.
+    /// (a bound that is not set does not limit). Compared as go-model does: see
+    /// <see cref="RaceResultDateTime.CompareTo"/>. A <see cref="DateTime"/> converts implicitly.
     /// </summary>
-    public bool IsWithinActiveTimeFrame(DateTime t)
+    public bool IsWithinActiveTimeFrame(RaceResultDateTime t)
     {
-        if (GoDateTime.TryParse(ActiveFrom, out var from) && GoDateTime.Compare(t, from) < 0)
+        if (ActiveFrom.IsSet && t.Before(ActiveFrom))
             return false;
-        if (GoDateTime.TryParse(ActiveUntil, out var until) && GoDateTime.Compare(t, until) > 0)
+        if (ActiveUntil.IsSet && t.After(ActiveUntil))
             return false;
         return true;
     }
 
     /// <summary>Whether the tab is shown in the menu at <paramref name="t"/>.</summary>
-    public bool IsVisibleInMenu(DateTime t) => ShowInMenu2 switch
+    public bool IsVisibleInMenu(RaceResultDateTime t)
     {
-        WebsiteShowInMenu.Always => true,
-        WebsiteShowInMenu.Never => false,
-        WebsiteShowInMenu.WhenActive => IsWithinActiveTimeFrame(t),
-        _ => ShowInMenu
-    };
+        if (ShowInMenu2 == WebsiteShowInMenu.Always) return true;
+        if (ShowInMenu2 == WebsiteShowInMenu.Never) return false;
+        if (ShowInMenu2 == WebsiteShowInMenu.WhenActive) return IsWithinActiveTimeFrame(t);
+        return ShowInMenu;
+    }
 }
 
 /// <summary><see cref="WebsiteTab.Type"/>'s values.</summary>
-public static class WebsiteTabTypes
+[JsonConverter(typeof(StringValueConverter<WebsiteTabType>))]
+public readonly struct WebsiteTabType(string value) : IStringValue<WebsiteTabType>, IEquatable<WebsiteTabType>
 {
-    public const string Text = "text";
-    public const string ExternalContent = "externalcontent";
-    public const string Registration = "registration";
-    public const string Lists = "lists";
-    public const string Favorites = "favorites";
-    public const string ParticipantView = "participantview";
+    public static readonly WebsiteTabType Text = new("text");
+    public static readonly WebsiteTabType ExternalContent = new("externalcontent");
+    public static readonly WebsiteTabType Registration = new("registration");
+    public static readonly WebsiteTabType Lists = new("lists");
+    public static readonly WebsiteTabType Favorites = new("favorites");
+    public static readonly WebsiteTabType ParticipantView = new("participantview");
     /// <summary>The home tab built by my.raceresult.com.</summary>
-    public const string Home = "home";
+    public static readonly WebsiteTabType Home = new("home");
     /// <summary>Legacy.</summary>
-    public const string Contact = "contact";
+    public static readonly WebsiteTabType Contact = new("contact");
     /// <summary>Legacy.</summary>
-    public const string Details = "details";
+    public static readonly WebsiteTabType Details = new("details");
     /// <summary>Legacy.</summary>
-    public const string Reviews = "reviews";
+    public static readonly WebsiteTabType Reviews = new("reviews");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteTabType From(string value) => new(value);
+    public static implicit operator WebsiteTabType(string value) => new(value);
+    public bool Equals(WebsiteTabType other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteTabType o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteTabType a, WebsiteTabType b) => a.Equals(b);
+    public static bool operator !=(WebsiteTabType a, WebsiteTabType b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 /// <summary><see cref="WebsiteTab.ShowInMenu2"/>'s values.</summary>
-public static class WebsiteShowInMenu
+[JsonConverter(typeof(StringValueConverter<WebsiteShowInMenu>))]
+public readonly struct WebsiteShowInMenu(string value) : IStringValue<WebsiteShowInMenu>, IEquatable<WebsiteShowInMenu>
 {
     /// <summary>Follow <see cref="WebsiteTab.ShowInMenu"/>.</summary>
-    public const string Default = "";
-    public const string Always = "always";
-    public const string Never = "never";
+    public static readonly WebsiteShowInMenu Default = new("");
+    public static readonly WebsiteShowInMenu Always = new("always");
+    public static readonly WebsiteShowInMenu Never = new("never");
     /// <summary>Only between <see cref="WebsiteTab.ActiveFrom"/> and <see cref="WebsiteTab.ActiveUntil"/>.</summary>
-    public const string WhenActive = "whenactive";
+    public static readonly WebsiteShowInMenu WhenActive = new("whenactive");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteShowInMenu From(string value) => new(value);
+    public static implicit operator WebsiteShowInMenu(string value) => new(value);
+    public bool Equals(WebsiteShowInMenu other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteShowInMenu o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteShowInMenu a, WebsiteShowInMenu b) => a.Equals(b);
+    public static bool operator !=(WebsiteShowInMenu a, WebsiteShowInMenu b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 /// <summary>A text tab's <see cref="WebsiteTab.Config"/>.</summary>
@@ -187,16 +230,27 @@ public record WebsiteTabExternalContentConfig
     public bool ShowEventNews { get; init; }
     public bool ShowExternalWebsiteLink { get; init; }
     public string ExternalWebsiteLink { get; init; } = "";
-    /// <summary>One of <see cref="WebsiteExternalContentSubTypes"/>.</summary>
-    public string SubType { get; init; } = "";
+    public WebsiteExternalContentSubType SubType { get; init; }
     public JsonElement? Config { get; init; }
 }
 
 /// <summary><see cref="WebsiteTabExternalContentConfig.SubType"/>'s values.</summary>
-public static class WebsiteExternalContentSubTypes
+[JsonConverter(typeof(StringValueConverter<WebsiteExternalContentSubType>))]
+public readonly struct WebsiteExternalContentSubType(string value) : IStringValue<WebsiteExternalContentSubType>, IEquatable<WebsiteExternalContentSubType>
 {
-    public const string IFrame = "";
-    public const string Youtube = "youtube";
+    public static readonly WebsiteExternalContentSubType IFrame = new("");
+    public static readonly WebsiteExternalContentSubType Youtube = new("youtube");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteExternalContentSubType From(string value) => new(value);
+    public static implicit operator WebsiteExternalContentSubType(string value) => new(value);
+    public bool Equals(WebsiteExternalContentSubType other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteExternalContentSubType o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteExternalContentSubType a, WebsiteExternalContentSubType b) => a.Equals(b);
+    public static bool operator !=(WebsiteExternalContentSubType a, WebsiteExternalContentSubType b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 /// <summary>A contact tab's <see cref="WebsiteTab.Config"/> (legacy).</summary>
@@ -211,7 +265,7 @@ public record WebsiteTabRegistrationConfig
 {
     /// <summary>HTML (plain text is already HTML here).</summary>
     public string InfoText { get; init; } = "";
-    public string RegTestModeUntil { get; init; } = "";
+    public RaceResultDateTime RegTestModeUntil { get; init; }
     public WebsiteRegistrationLogin RegistrationLogin { get; init; } = new();
     public WebsiteRegConfig[]? RegistrationForms { get; init; }
 }
@@ -240,18 +294,29 @@ public record WebsiteTabListsConfig
 {
     /// <summary>HTML (plain text is already HTML here).</summary>
     public string InfoText { get; init; } = "";
-    /// <summary>One of <see cref="WebsiteListsSubtypes"/>.</summary>
-    public string Subtype { get; init; } = "";
+    public WebsiteListsSubtype Subtype { get; init; }
     public string StandardDetails { get; init; } = "";
     public WebsiteConfigList[]? Lists { get; init; }
     public bool LeaderboardHideCount { get; init; }
 }
 
 /// <summary><see cref="WebsiteTabListsConfig.Subtype"/>'s values.</summary>
-public static class WebsiteListsSubtypes
+[JsonConverter(typeof(StringValueConverter<WebsiteListsSubtype>))]
+public readonly struct WebsiteListsSubtype(string value) : IStringValue<WebsiteListsSubtype>, IEquatable<WebsiteListsSubtype>
 {
-    public const string Boxes = "boxes";
-    public const string Dropdown = "dropdown";
+    public static readonly WebsiteListsSubtype Boxes = new("boxes");
+    public static readonly WebsiteListsSubtype Dropdown = new("dropdown");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteListsSubtype From(string value) => new(value);
+    public static implicit operator WebsiteListsSubtype(string value) => new(value);
+    public bool Equals(WebsiteListsSubtype other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteListsSubtype o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteListsSubtype a, WebsiteListsSubtype b) => a.Equals(b);
+    public static bool operator !=(WebsiteListsSubtype a, WebsiteListsSubtype b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 /// <summary>A list on a lists tab (go-model's <c>website.ConfigList</c>).</summary>
@@ -284,8 +349,8 @@ public record WebsiteTabDetailsConfig
     public string PortalPhotographerBib { get; init; } = "";
     public WebsitePublishedCertificateSet[]? CertificateSets { get; init; }
     public WebsiteConfigLink[]? Links { get; init; }
-    public string CertificatesShowFrom { get; init; } = "";
-    public string CertificatesShowUntil { get; init; } = "";
+    public RaceResultDateTime CertificatesShowFrom { get; init; }
+    public RaceResultDateTime CertificatesShowUntil { get; init; }
     public bool EnableComments { get; init; }
     public string List { get; init; } = "";
 }
@@ -340,8 +405,8 @@ public record WebsiteSearchConfig
 
 public record WebsiteRegistrationContestEntryFee
 {
-    public string DateStart { get; init; } = "";
-    public string DateEnd { get; init; } = "";
+    public RaceResultDate DateStart { get; init; }
+    public RaceResultDate DateEnd { get; init; }
     public DateTime RegStart { get; init; }
     public DateTime RegEnd { get; init; }
     public decimal Fee { get; init; }
@@ -357,8 +422,8 @@ public record WebsiteRegistrationContest
     public DateTime Start { get; init; }
     public string Name { get; init; } = "";
     public string Sex { get; init; } = "";
-    public string AgeStart { get; init; } = "";
-    public string AgeEnd { get; init; } = "";
+    public RaceResultDate AgeStart { get; init; }
+    public RaceResultDate AgeEnd { get; init; }
     public WebsiteRegistrationContestEntryFee[]? EntryFees { get; init; }
     public int SlotsLeft { get; init; }
 }
@@ -417,12 +482,10 @@ public record WebsiteElement
 {
     [JsonPropertyName("ID")]
     public string Id { get; init; } = "";
-    /// <summary>One of <see cref="WebsiteElementTypes"/>.</summary>
-    public string Type { get; init; } = "";
-    /// <summary>One of <see cref="WebsiteElementActive"/>.</summary>
-    public string Active { get; init; } = "";
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public WebsiteElementType Type { get; init; }
+    public WebsiteElementActive Active { get; init; }
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public string ShowIf { get; init; } = "";
     public WebsiteStyle[]? Styles { get; init; }
     public string DynamicFormat { get; init; } = "";
@@ -431,38 +494,62 @@ public record WebsiteElement
 }
 
 /// <summary><see cref="WebsiteElement.Type"/>'s values.</summary>
-public static class WebsiteElementTypes
+[JsonConverter(typeof(StringValueConverter<WebsiteElementType>))]
+public readonly struct WebsiteElementType(string value) : IStringValue<WebsiteElementType>, IEquatable<WebsiteElementType>
 {
-    public const string Text = "text";
-    public const string Html = "html";
-    public const string Picture = "picture";
-    public const string Columns = "columns";
-    public const string Flexbox = "flexbox";
-    public const string Field = "field";
-    public const string Box = "box";
-    public const string Tabs = "tabs";
-    public const string Splits = "splits";
-    public const string Legs = "legs";
-    public const string Links = "links";
-    public const string List = "list";
-    public const string Photos = "photos";
-    public const string Certificates = "certificates";
-    public const string Chart = "chart";
-    public const string InlineBlock = "inlineblock";
-    public const string Map = "map";
+    public static readonly WebsiteElementType Text = new("text");
+    public static readonly WebsiteElementType Html = new("html");
+    public static readonly WebsiteElementType Picture = new("picture");
+    public static readonly WebsiteElementType Columns = new("columns");
+    public static readonly WebsiteElementType Flexbox = new("flexbox");
+    public static readonly WebsiteElementType Field = new("field");
+    public static readonly WebsiteElementType Box = new("box");
+    public static readonly WebsiteElementType Tabs = new("tabs");
+    public static readonly WebsiteElementType Splits = new("splits");
+    public static readonly WebsiteElementType Legs = new("legs");
+    public static readonly WebsiteElementType Links = new("links");
+    public static readonly WebsiteElementType List = new("list");
+    public static readonly WebsiteElementType Photos = new("photos");
+    public static readonly WebsiteElementType Certificates = new("certificates");
+    public static readonly WebsiteElementType Chart = new("chart");
+    public static readonly WebsiteElementType InlineBlock = new("inlineblock");
+    public static readonly WebsiteElementType Map = new("map");
     /// <summary>Legacy.</summary>
-    public const string Favorite = "favorite";
+    public static readonly WebsiteElementType Favorite = new("favorite");
     /// <summary>Legacy.</summary>
-    public const string Comments = "comments";
+    public static readonly WebsiteElementType Comments = new("comments");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteElementType From(string value) => new(value);
+    public static implicit operator WebsiteElementType(string value) => new(value);
+    public bool Equals(WebsiteElementType other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteElementType o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteElementType a, WebsiteElementType b) => a.Equals(b);
+    public static bool operator !=(WebsiteElementType a, WebsiteElementType b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 /// <summary><see cref="WebsiteElement.Active"/>'s values.</summary>
-public static class WebsiteElementActive
+[JsonConverter(typeof(StringValueConverter<WebsiteElementActive>))]
+public readonly struct WebsiteElementActive(string value) : IStringValue<WebsiteElementActive>, IEquatable<WebsiteElementActive>
 {
-    public const string No = "no";
-    public const string OnlyPopup = "onlypopup";
-    public const string OnlyStandalone = "onlystandalone";
-    public const string Yes = "yes";
+    public static readonly WebsiteElementActive No = new("no");
+    public static readonly WebsiteElementActive OnlyPopup = new("onlypopup");
+    public static readonly WebsiteElementActive OnlyStandalone = new("onlystandalone");
+    public static readonly WebsiteElementActive Yes = new("yes");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteElementActive From(string value) => new(value);
+    public static implicit operator WebsiteElementActive(string value) => new(value);
+    public bool Equals(WebsiteElementActive other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteElementActive o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteElementActive a, WebsiteElementActive b) => a.Equals(b);
+    public static bool operator !=(WebsiteElementActive a, WebsiteElementActive b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 /// <summary>A CSS attribute/value pair.</summary>
@@ -496,22 +583,33 @@ public record WebsiteElementPictureConfig
 public record WebsiteElementFieldConfig
 {
     public string Field { get; init; } = "";
-    /// <summary>One of <see cref="WebsiteFieldDisplayModes"/>.</summary>
-    public string DisplayMode { get; init; } = "";
+    public WebsiteFieldDisplayMode DisplayMode { get; init; }
     public string Title { get; init; } = "";
-    /// <summary>For <see cref="WebsiteFieldDisplayModes.TitleAbove"/>.</summary>
+    /// <summary>For <see cref="WebsiteFieldDisplayMode.TitleAbove"/>.</summary>
     public WebsiteStyle[]? TitleStyles { get; init; }
     public string TitleDynamicFormat { get; init; } = "";
     public int Alignment { get; init; }
 }
 
 /// <summary><see cref="WebsiteElementFieldConfig.DisplayMode"/>'s values.</summary>
-public static class WebsiteFieldDisplayModes
+[JsonConverter(typeof(StringValueConverter<WebsiteFieldDisplayMode>))]
+public readonly struct WebsiteFieldDisplayMode(string value) : IStringValue<WebsiteFieldDisplayMode>, IEquatable<WebsiteFieldDisplayMode>
 {
-    public const string FieldOnly = "";
-    public const string Badge = "badge";
-    public const string TitleAbove = "titleabove";
-    public const string TitleBelow = "titlebelow";
+    public static readonly WebsiteFieldDisplayMode FieldOnly = new("");
+    public static readonly WebsiteFieldDisplayMode Badge = new("badge");
+    public static readonly WebsiteFieldDisplayMode TitleAbove = new("titleabove");
+    public static readonly WebsiteFieldDisplayMode TitleBelow = new("titlebelow");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteFieldDisplayMode From(string value) => new(value);
+    public static implicit operator WebsiteFieldDisplayMode(string value) => new(value);
+    public bool Equals(WebsiteFieldDisplayMode other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteFieldDisplayMode o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteFieldDisplayMode a, WebsiteFieldDisplayMode b) => a.Equals(b);
+    public static bool operator !=(WebsiteFieldDisplayMode a, WebsiteFieldDisplayMode b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 public record WebsiteElementSplitsConfig
@@ -576,26 +674,50 @@ public record WebsiteElementInlineBlockConfig
 public record WebsiteElementChartConfig
 {
     public bool EmbedInBox { get; init; }
-    /// <summary>One of <see cref="WebsiteChartTypes"/>.</summary>
-    public string ChartType { get; init; } = "";
-    /// <summary>One of <see cref="WebsiteRankScopes"/>; left out when null.</summary>
-    public string? RankScope { get; init; }
+    public WebsiteChartType ChartType { get; init; }
+    /// <summary>Left out when <see cref="WebsiteRankScope.Overall"/> (empty), as in go-model.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public WebsiteRankScope RankScope { get; init; }
 }
 
 /// <summary><see cref="WebsiteElementChartConfig.ChartType"/>'s values.</summary>
-public static class WebsiteChartTypes
+[JsonConverter(typeof(StringValueConverter<WebsiteChartType>))]
+public readonly struct WebsiteChartType(string value) : IStringValue<WebsiteChartType>, IEquatable<WebsiteChartType>
 {
-    public const string SplitPace = "splitpace";
-    public const string SplitRank = "splitrank";
-    public const string Elevation = "elevation";
+    public static readonly WebsiteChartType SplitPace = new("splitpace");
+    public static readonly WebsiteChartType SplitRank = new("splitrank");
+    public static readonly WebsiteChartType Elevation = new("elevation");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteChartType From(string value) => new(value);
+    public static implicit operator WebsiteChartType(string value) => new(value);
+    public bool Equals(WebsiteChartType other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteChartType o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteChartType a, WebsiteChartType b) => a.Equals(b);
+    public static bool operator !=(WebsiteChartType a, WebsiteChartType b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 /// <summary><see cref="WebsiteElementChartConfig.RankScope"/>'s values.</summary>
-public static class WebsiteRankScopes
+[JsonConverter(typeof(StringValueConverter<WebsiteRankScope>))]
+public readonly struct WebsiteRankScope(string value) : IStringValue<WebsiteRankScope>, IEquatable<WebsiteRankScope>
 {
-    public const string Overall = "";
-    public const string Gender = "gender";
-    public const string AgeGroup = "agegroup";
+    public static readonly WebsiteRankScope Overall = new("");
+    public static readonly WebsiteRankScope Gender = new("gender");
+    public static readonly WebsiteRankScope AgeGroup = new("agegroup");
+
+    private readonly string? _value = value;
+    public string Value => _value ?? "";
+    public static WebsiteRankScope From(string value) => new(value);
+    public static implicit operator WebsiteRankScope(string value) => new(value);
+    public bool Equals(WebsiteRankScope other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is WebsiteRankScope o && Equals(o);
+    public override int GetHashCode() => Value.GetHashCode();
+    public static bool operator ==(WebsiteRankScope a, WebsiteRankScope b) => a.Equals(b);
+    public static bool operator !=(WebsiteRankScope a, WebsiteRankScope b) => !a.Equals(b);
+    public override string ToString() => Value;
 }
 
 public record WebsiteElementMapConfig
@@ -657,8 +779,8 @@ public record Presenter
     public string Key { get; init; } = "";
     public string Title { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public string SwitchMode { get; init; } = "";
     public bool AutoHideTabs { get; init; }
     public PresenterScreen[]? Screens { get; init; }
@@ -707,49 +829,3 @@ public record PresenterWindow
 public record PresenterStyle(string Attribute, string Value);
 
 public record PresenterDisplayDimensions(int Width, int Height);
-
-// ── go-model's datetime.DateTime, read from its text ─────────────────────────
-
-internal static class GoDateTime
-{
-    /// <summary>A datetime.DateTime: a wall clock without a zone, or an instant with one.</summary>
-    public readonly record struct Value(DateTime WallClock, DateTimeOffset Instant, bool HasZone);
-
-    /// <summary>
-    /// Reads "2006-01-02", "2006-01-02 15:04:05" (no zone) or RFC 3339 (with zone). False for an
-    /// empty value, go-model's zero dates (0001-01-01, 1899-12-30) and text go-model would not read.
-    /// </summary>
-    public static bool TryParse(string? s, out Value value)
-    {
-        value = default;
-        if (string.IsNullOrWhiteSpace(s)) return false;
-
-        if (s.Length is 10 or 19)
-        {
-            if (!DateTime.TryParseExact(s, s.Length == 10 ? "yyyy-MM-dd" : "yyyy-MM-dd HH:mm:ss",
-                    CultureInfo.InvariantCulture, DateTimeStyles.None, out var wallClock))
-                return false;
-            value = new Value(wallClock, default, HasZone: false);
-        }
-        else
-        {
-            if (!DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None, out var instant))
-                return false;
-            value = new Value(instant.DateTime, instant, HasZone: true);
-        }
-        return value.WallClock != DateTime.MinValue && value.WallClock != new DateTime(1899, 12, 30);
-    }
-
-    /// <summary>
-    /// Compares <paramref name="t"/> with <paramref name="v"/> as go-model's DateTime.Before/After do:
-    /// as instants when both have a zone, else as wall clocks in the zone of the one that has it.
-    /// A <paramref name="t"/> of <see cref="DateTimeKind.Unspecified"/> has no zone.
-    /// </summary>
-    public static int Compare(DateTime t, Value v)
-    {
-        if (v.HasZone && t.Kind != DateTimeKind.Unspecified)
-            return t.ToUniversalTime().CompareTo(v.Instant.UtcDateTime);
-        return DateTime.SpecifyKind(t, DateTimeKind.Unspecified)
-            .CompareTo(DateTime.SpecifyKind(v.WallClock, DateTimeKind.Unspecified));
-    }
-}

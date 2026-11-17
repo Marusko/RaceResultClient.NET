@@ -28,7 +28,7 @@ public sealed class AgeGroupsEndpoints(EventApiClient e)
 
     /// <summary>Generates new age groups from templates.</summary>
     public Task<AgeGroup[]> GenerateAsync(string mode, int contest, int set, bool ageBase,
-        string date, string lang = "", CancellationToken ct = default)
+        RaceResultDateTime date, string lang = "", CancellationToken ct = default)
         => e.GetAsync<AgeGroup[]>("agegroups/generate",
             new QueryParams()
                 .Add("mode", mode).Add("contest", contest).Add("set", set)

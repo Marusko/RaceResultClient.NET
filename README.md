@@ -24,6 +24,7 @@ RaceResultClient.NET/
 ├── DesignModels.cs           # Design-object models (certificate, label, list, kiosk, …)
 ├── WebsiteModels.cs          # go-model's website (event site, participant view) and presenter models
 ├── PayModels.cs              # go-model's invoice and pay (online payment) models
+├── Values.cs                 # RaceResultDateTime, RaceResultDate, string-backed value types, converters
 ├── Supporting.cs             # QueryParams builder, ApiException, Identifier, JSON config
 └── RaceResultClient.csproj
 ```
@@ -36,7 +37,8 @@ except the certificate page-size/format enums which serialize as strings.
 Property names follow C# conventions (`Id`, `Url`, `Rssi`), but every property whose Go JSON name
 differs carries a `[JsonPropertyName]` attribute (`ID`, `URL`, `RSSI`, …), so the JSON names on the
 wire are the ones go-webapi sends and expects. The JSON is not byte-for-byte Go's, though: a `null`
-property is left out where Go writes `null`, and dates are written by `System.Text.Json`.
+property is left out where Go writes `null`, and `time.Time` fields (`DateTime` here) are written by
+`System.Text.Json` (go-model's own date types are written as Go writes them, see [Dates](#dates)).
 
 ---
 
@@ -226,13 +228,16 @@ await ev.Participants.GetFieldsAsync(Identifier.Pid(5432), new[] { "Firstname", 
 await ev.History.GetAsync(Identifier.Id(99));
 ```
 
+`default(Identifier)` names nothing; an endpoint given one throws an `ArgumentException` before any
+request is sent.
+
 ### RaceResult's codes
 
 Where a model field or a parameter is a choice among RaceResult's own numbers, the library takes an
 `enum`, not an `int`, so a caller keeps no RaceResult numbers of its own. Identifiers stay `int` — a
 PID, a bib, a contest, a result or a split `Id` is a number, not a choice. The values are
-RaceResult's go-model constants or what RaceResult's own splits page writes (checked against a splits
-definition set up by hand and exported):
+RaceResult's go-model constants or what RaceResult's own pages write (checked against a splits
+definition and a registration's payment methods set up by hand and exported):
 
 | Enum | Field | Values |
 |---|---|---|
@@ -249,23 +254,46 @@ definition set up by hand and exported):
 | `StatisticAggregation` | `Statistics.Aggregation`, `Statistics.ComputeAsync`, `Data.TransformationAsync` | `Count` 1, `Minimum` 2, `Maximum` 3, `Mean` 4, `Sum` 5 |
 | `CertificateAlignment` / `CertificateVAlignment` | `CertificateElement.Alignment` / `.VAlignment` | `Left` 1, `Center` 2, `Right` 3 / `Top` 0, `Middle` 1, `Bottom` 2 |
 | `WebsiteRegIfLoggedIn` | `WebsiteRegConfig.IfLoggedIn`, `WebsiteRegistration.IfLoggedIn` | `Always` 0, `IfLoggedIn` 1, `IfNotLoggedIn` 2 |
-| `PaymentMethod` | `PayPayment.Method`, `PayMethod.Id`, `PayMethodOption.Id`, … | `NoPayment` 0 … `TazaPay` 42, `Cb` 99 (go-model's `Pm…`) |
+| `PaymentMethod` | `RegistrationPaymentMethod.Id`, `InvoicePaymentTerms.Method`, `PayPayment.Method`, `PayMethod.Id`, … | `NoPayment` 0, `CreditCardEur` 2, `MoneyTransferEuropean` 4, `CashAtEvent` 5, `PayPalEur` 7, `SepaDirectDebit` 16, … `OwnStripe` 31, … `OwnTazaPay` 42, named as RaceResult's registration settings list them |
 | `PayState` | `PayPayment.PayState` | `Undefined` 0, `Pending` 1, `Underpaid` 2, `Paid` 3, `Overpaid` 4, `NoPayout` 5 |
 
 The design enums (`PageSize`, `PageFormat`, `CertificateElementType`, `LabelAlignment`,
 `ListShowAt`, `ListPageBreak`, `EmailTemplateType`, `CertificateSetType`, …) cover the same ground
 for the design objects.
 
-Fields RaceResult stores as text stay `string`. Where their values are a known set, a static class
-names them, since a value outside the set is still valid text:
+Where RaceResult stores a choice as text, the field is a string-backed value type: the known values
+are static members (`SplitDistanceUnit.Kilometers`), a string converts implicitly
+(`DistanceUnit = "km"`, `tab.Type == "home"`), `.Value` is the text, and text this library does not
+know yet is kept as it is and written back unchanged (a plain C# enum would throw on it). RaceResult
+adds such values often: four new event-site values in one month.
 
-| Class | Field | Values |
+| Type | Field | Values |
 |---|---|---|
-| `SplitDistanceUnits` | `Split.DistanceUnit` | `m`, `km`, `miles` |
-| `WebsiteTabTypes`, `WebsiteShowInMenu`, `WebsiteElementTypes`, `WebsiteElementActive`, `WebsiteFieldDisplayModes`, `WebsiteChartTypes`, `WebsiteRankScopes`, … | the event site's `Type`, `ShowInMenu2`, `Active`, … | go-model's `website` constants |
+| `SplitDistanceUnit` | `Split.DistanceUnit` | `Meters` "m", `Kilometers` "km", `Miles` "miles" |
+| `WebsiteTabType`, `WebsiteShowInMenu`, `WebsiteElementType`, `WebsiteElementActive`, `WebsiteFieldDisplayMode`, `WebsiteChartType`, `WebsiteRankScope`, `WebsiteAdditionalFeatureType`, `WebsiteExternalContentSubType`, `WebsiteListsSubtype`, `WebsiteApplyContestColor` | the event site's `Type`, `ShowInMenu2`, `Active`, … | go-model's `website` constants |
 
-`Split.SpeedOrPace` is text too, but holds a number: the `SplitSpeed` enum (`None` 0 …
-`MetresPerSecond` 6) names it, so `((int)SplitSpeed.Kmh).ToString()` is the value for km/h.
+`Split.SpeedOrPace` is text holding a number (`"4"`); it is typed as the `SplitSpeed` enum (`None` 0 …
+`MetresPerSecond` 6) and still written as text.
+
+### Dates
+
+go-model writes two date types as text, and they are typed here:
+
+| Type | go-model | Text | Fields |
+|---|---|---|---|
+| `RaceResultDateTime` | `datetime.DateTime` | `"2006-01-02"` or `"2006-01-02 15:04:05"` (a wall clock, no zone), or RFC 3339 `"2006-01-02T15:04:05+01:00"` (an instant) | `EnabledFrom`/`EnabledTo` of registrations, kiosks, presenters and site elements, `Participant.Created`, `Voucher.ValidFrom`, `EventListItem.EventDate`, `WebsiteTab.ActiveFrom`, … |
+| `RaceResultDate` | `date.Date` | `"2006-01-02"` | `Participant.DateOfBirth`, `Contest.AgeStart`, `EntryFee.DateStart`, `Invoice.Date`, … |
+
+`default` is "not set" (`IsSet` is false) and is written as `""`, as are go-model's zero dates
+(0001-01-01 and 1899-12-30). A `DateTime` converts implicitly — `Unspecified` as a wall clock,
+`Utc`/`Local` as an instant — and so does a `DateOnly` to `RaceResultDate`. `WallClock`, `Instant`
+(null without a zone) and `RaceResultDate.Value` read them back. Comparison follows go-model: two
+instants compare as instants, otherwise the wall clocks compare (`Before`, `After`, `<`, `>`).
+Text that is not one of these forms throws a `JsonException`, as go-model's own parser fails on it.
+
+Fields go-model types as `time.Time` stay `DateTime`. In a query string a `DateTime` is sent as
+go-webapi sends a `time.Time`: RFC 3339 with the offset (`2025-06-01T00:00:00+02:00`; `Unspecified`
+is local time).
 
 ```csharp
 // Lap 2: 5 km from the previous split, between 5 s and 1 min after it, cycling
@@ -273,7 +301,7 @@ var lap = new Split
 {
     Contest = 1, Name = "Lap2", TimingPoint = "FINISH",
     TypeOfSport = TypeOfSport.Cycling,
-    Distance = 5, DistanceUnit = SplitDistanceUnits.Kilometers,
+    Distance = 5, DistanceUnit = SplitDistanceUnit.Kilometers, SpeedOrPace = SplitSpeed.Kmh,
     DistanceFrom = SplitDistanceFrom.PreviousSplit,
     TimeMin = 5, TimeMax = 60, TimeMode = SplitTimeMode.FromPreviousSplit,
 };
@@ -311,7 +339,9 @@ JSON) does not have to write them itself:
 | `PayPayment`, `PayRegistration`, `PayMethod`, `PayCreateRequest`, `PayCaptureResponse`, … | RACE RESULT's online payment service (go-model's `pay`) |
 
 A tab's or element's `Config` is the raw `JsonElement`; deserialize it into the record its `Type`
-names (`tab.Config?.Deserialize<WebsiteTabListsConfig>()`). go-model's helpers are ported with them:
+names (`tab.Config?.Deserialize<WebsiteTabListsConfig>()`). `InvoiceSettings` is assembled from the
+event's `Invoice…` settings (`InvoiceNumberScheme`, `InvoiceIssuerCompany`, …), readable with
+`ev.Settings.GetAsync`. go-model's helpers are ported with them:
 `WebsiteTab.IsVisibleInMenu(t)` / `IsWithinActiveTimeFrame(t)`, `Certificate.PageCount()`,
 `GetWidth()`, `GetHeight()`, `GetHoles()`, `CertificatePageSize.Width()` / `Height()` and
 `PageSize.ToMm(landscape)`.
@@ -366,6 +396,10 @@ byte[] posted = await ev.PostRawAsync("some/undocumented/endpoint", new { Name =
 
 // Several resources in one round trip (go-webapi's MultiRequest): the answer is keyed by request
 Dictionary<string, JsonElement> many = await ev.MultiRequestAsync(requests);
+
+// What RaceResult's web UI calls periodically while an event is open (not in go-webapi);
+// it appears to keep the session alive. The response comes back as text.
+string check = await ev.CheckAsync(lang: "en");
 ```
 
 ---
@@ -457,8 +491,8 @@ await ev.Settings.SaveAsync("EventName", "My Updated Race Name");
 
 - **`ApiClient`** owns the `HttpClient` and session state. It is the root object and should be disposed when done.
 - **`EventApiClient`** is a lightweight façade created via `client.ForEvent(id)`. It holds only an event ID string and a reference to `ApiClient` — no state of its own. Endpoint group objects (e.g. `ev.Participants`) are instantiated on each property access (no caching overhead, no shared state).
-- **Models** are C# `record` types, copied with `with`; almost all of their properties are
-  `init`-only. `LoginOptions` is a plain settable class.
+- **Models** are C# `record` types with `init`-only properties, copied with `with`. `LoginOptions` is a
+  plain settable class.
 - **Serialization** uses `System.Text.Json` throughout, with case-insensitive deserialization; `null`
   properties are left out when writing. Enums serialize as their numbers, as Go's `encoding/json`
   does; the certificate page-size/format enums are the exception and serialize as strings, matching

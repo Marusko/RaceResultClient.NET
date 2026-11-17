@@ -5,7 +5,7 @@ namespace RaceResultClient;
 
 // Ports of the go-model design-object packages (certificate, certificateset,
 // label, list, kiosk, emailtemplate, registration, statistic, page).
-// datetime.DateTime fields are mapped to string (non-ISO wire format),
+// datetime.DateTime fields are mapped to RaceResultDateTime,
 // decimal.Decimal to decimal, interface{} to JsonElement?, variant.VariantMap
 // to Dictionary<string, JsonElement>.
 
@@ -48,7 +48,7 @@ public static class PageSizeExtensions
 // ── certificate ───────────────────────────────────────────────────────────────
 
 /// <summary>certificate.PageSize — serialized as a string ("A4", "Letter", …).</summary>
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonConverter(typeof(CertificatePageSizeConverter))]
 public enum CertificatePageSize
 {
     A1 = 0, A2 = 1, A3 = 2, A4 = 3, A5 = 4,
@@ -56,8 +56,73 @@ public enum CertificatePageSize
 }
 
 /// <summary>certificate.PageFormat — serialized as a string ("Portrait"/"Landscape").</summary>
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonConverter(typeof(CertificatePageFormatConverter))]
 public enum CertificatePageFormat { Portrait = 0, Landscape = 1 }
+
+/// <summary>
+/// As go-model's <c>certificate.PageSize</c>: reads the name in any case, and any other text as
+/// <see cref="CertificatePageSize.UserDefined"/>; writes "A1"…"A6", "Letter", "Legal" or "UserDefined".
+/// </summary>
+public sealed class CertificatePageSizeConverter : JsonConverter<CertificatePageSize>
+{
+    public override CertificatePageSize Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Number) return (CertificatePageSize)reader.GetInt32();
+        if (reader.TokenType != JsonTokenType.String)
+            throw new JsonException($"A certificate page size is text, not {reader.TokenType}.");
+        return reader.GetString()?.ToUpperInvariant() switch
+        {
+            "A1" => CertificatePageSize.A1,
+            "A2" => CertificatePageSize.A2,
+            "A3" => CertificatePageSize.A3,
+            "A4" => CertificatePageSize.A4,
+            "A5" => CertificatePageSize.A5,
+            "A6" => CertificatePageSize.A6,
+            "LEGAL" => CertificatePageSize.Legal,
+            "LETTER" => CertificatePageSize.Letter,
+            _ => CertificatePageSize.UserDefined
+        };
+    }
+
+    public override void Write(Utf8JsonWriter writer, CertificatePageSize value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value switch
+        {
+            CertificatePageSize.A1 => "A1",
+            CertificatePageSize.A2 => "A2",
+            CertificatePageSize.A3 => "A3",
+            CertificatePageSize.A4 => "A4",
+            CertificatePageSize.A5 => "A5",
+            CertificatePageSize.A6 => "A6",
+            CertificatePageSize.Letter => "Letter",
+            CertificatePageSize.Legal => "Legal",
+            _ => "UserDefined"
+        });
+}
+
+/// <summary>
+/// As go-model's <c>certificate.PageFormat</c>: reads "portrait"/"landscape" in any case, and any other
+/// text as <see cref="CertificatePageFormat.Portrait"/> (go-model leaves the zero value).
+/// </summary>
+public sealed class CertificatePageFormatConverter : JsonConverter<CertificatePageFormat>
+{
+    public override CertificatePageFormat Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Number) return (CertificatePageFormat)reader.GetInt32();
+        if (reader.TokenType != JsonTokenType.String)
+            throw new JsonException($"A certificate page format is text, not {reader.TokenType}.");
+        return string.Equals(reader.GetString(), "landscape", StringComparison.OrdinalIgnoreCase)
+            ? CertificatePageFormat.Landscape
+            : CertificatePageFormat.Portrait;
+    }
+
+    public override void Write(Utf8JsonWriter writer, CertificatePageFormat value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value switch
+        {
+            CertificatePageFormat.Portrait => "Portrait",
+            CertificatePageFormat.Landscape => "Landscape",
+            _ => ""
+        });
+}
 
 public static class CertificatePageSizeExtensions
 {
@@ -436,7 +501,7 @@ public record List
     public bool ListHeaderFooterFontUnderlined { get; init; }
     public int ListHeaderFooterAlignment { get; init; }
     public string Remarks { get; init; } = "";
-    public string LastChange { get; init; } = "";
+    public RaceResultDateTime LastChange { get; init; }
     public string FooterText1 { get; init; } = "";
     public string FooterText2 { get; init; } = "";
     public string FooterText3 { get; init; } = "";
@@ -502,8 +567,8 @@ public record Kiosk
     public string Name { get; init; } = "";
     public string Key { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public int TransponderMode { get; init; }
     public int AcceptedTransponders { get; init; }
     public bool IgnoreBibRanges { get; init; }
@@ -636,8 +701,8 @@ public record Registration
     public string ChangeKeySalt { get; init; } = "";
     public string Title { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public string TestModeKey { get; init; } = "";
     public string Type { get; init; } = "";
     public int GroupMin { get; init; }
@@ -673,8 +738,8 @@ public record RegistrationStep
     public int Id { get; init; }
     public string Title { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public RegistrationElement[] Elements { get; init; } = [];
     public string ButtonText { get; init; } = "";
 }
@@ -684,8 +749,8 @@ public record RegistrationElement
     public string Type { get; init; } = "";
     public string Label { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public RegistrationField? Field { get; init; }
     public string ShowIf { get; init; } = "";
     public int ShowIfMode { get; init; }
@@ -725,8 +790,8 @@ public record RegistrationValue
     public JsonElement? Value { get; init; }
     public string Label { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public int MaxCapacity { get; init; }
     public string ShowIf { get; init; } = "";
 }
@@ -758,11 +823,11 @@ public record RegistrationAfterSave
 public record RegistrationPaymentMethod
 {
     [JsonPropertyName("ID")]
-    public int Id { get; init; }
+    public PaymentMethod Id { get; init; }
     public string Label { get; init; } = "";
     public bool Enabled { get; init; }
-    public string EnabledFrom { get; init; } = "";
-    public string EnabledTo { get; init; } = "";
+    public RaceResultDateTime EnabledFrom { get; init; }
+    public RaceResultDateTime EnabledTo { get; init; }
     public string Filter { get; init; } = "";
 }
 
