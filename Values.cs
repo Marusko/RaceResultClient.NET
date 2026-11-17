@@ -252,7 +252,8 @@ public sealed class StringValueConverter<T> : JsonConverter<T> where T : struct,
 // ── an enum RaceResult stores as text ─────────────────────────────────────────
 
 /// <summary>
-/// An enum whose number RaceResult stores as text (<c>"4"</c>); <c>""</c> reads as 0. A number this
+/// An enum whose number RaceResult stores as text (<c>"4"</c>). 0 is stored as <c>""</c> (as
+/// RaceResult's splits page writes "none"), and both <c>""</c> and <c>"0"</c> read as 0. A number this
 /// library has no name for still round-trips.
 /// </summary>
 public sealed class NumberTextEnumConverter<T> : JsonConverter<T> where T : struct, Enum
@@ -280,5 +281,8 @@ public sealed class NumberTextEnumConverter<T> : JsonConverter<T> where T : stru
     }
 
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
-        => writer.WriteStringValue(Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture));
+    {
+        var n = Convert.ToInt64(value, CultureInfo.InvariantCulture);
+        writer.WriteStringValue(n == 0 ? "" : n.ToString(CultureInfo.InvariantCulture));
+    }
 }
